@@ -48,9 +48,10 @@ void euler(const double dt,
 {
 	for(auto& point : points)
 	{
-		if(&point == &points.front())
+		if(point.isFixed())
 			continue;
 
+		// gravity
 		point.setUserForce(Vec2(0, -10));
 
 		if(interaction)
