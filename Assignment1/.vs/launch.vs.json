@@ -6,6 +6,7 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
+      "args": [ "-testcase spring1d", "-damp 0.5", "-stiff 40" ],
       "name": "Spring"
     },
     {
@@ -13,7 +14,14 @@
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
       "args": [ "-testcase hanging", "-damp 0.5", "-stiff 40" ],
-      "name": "Hanging"
+      "name": "Hanging Elastic"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [ "-testcase hanging", "-damp 0.5", "-stiff 100" ],
+      "name": "Hanging Stiff"
     },
     {
       "type": "default",
