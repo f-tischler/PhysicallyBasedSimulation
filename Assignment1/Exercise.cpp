@@ -18,17 +18,13 @@
 *******************************************************************/
 
 /* Standard includes */
-#include <iostream>
 #include <vector>
 #include <random>
 using namespace std;
 
 /* Local includes */
 #include "Vec2.h"
-#include "Point.h"
 #include "Scene.h"
-
-
 
 /******************************************************************
 *
@@ -42,23 +38,23 @@ using namespace std;
 *
 *******************************************************************/
 
-void euler(const double dt, 
-		   vector<Point> &points,
-		   vector<Spring> &springs,
+void euler(const double dt,
+           vector<Point>& points,
+           vector<Spring>& springs,
            const bool interaction)
 {
 	static default_random_engine rng;
 	static auto rnd = uniform_real_distribution<>(-50, 50);
 
-	for(auto& point : points)
+	for (auto& point : points)
 	{
-		if(point.isFixed())
+		if (point.isFixed())
 			continue;
 
 		// gravity
 		point.setUserForce(Vec2(0, -10));
 
-		if(interaction)
+		if (interaction)
 		{
 			point.setUserForce(point.getUserForce() + Vec2(
 				rnd(rng), abs(rnd(rng))));
@@ -68,68 +64,66 @@ void euler(const double dt,
 
 		point.setForce(Vec2(0, 0));
 
-		for(auto& spring : springs)
+		for (auto& spring : springs)
 		{
-			if(spring.getPoint(0) != &point &&
-			   spring.getPoint(1) != &point)
+			if (spring.getPoint(0) != &point &&
+				spring.getPoint(1) != &point)
 			{
 				continue;
 			}
 
 			const auto spring_point = spring.getPoint(0) == &point
-				? spring.getPoint(1)
-				: spring.getPoint(0);
+				                          ? spring.getPoint(1)
+				                          : spring.getPoint(0);
 
 			const auto connection =
-				point.getPos() - spring_point->getPos();
+					point.getPos() - spring_point->getPos();
 
 			const auto distance = connection.length();
 
 			if (abs(distance) < 0.00000001)
-				continue;;
+				continue;
 
 			const auto direction = connection.normalize();
 
 			const auto f = spring.getStiffness() *
-				(spring.getRestLength() - distance) * direction;
+					(spring.getRestLength() - distance) * direction;
 
 			point.addForce(f);
 		}
-		
+
 		point.addForce(point.getUserForce());
-		
+
 		const auto a = (point.getForce() - point.getDamping() * point.getVel()) /
-			point.getMass();
+				point.getMass();
 
 		point.setVel(point.getVel() + a * dt);
 	}
-
 }
 
-void TimeStep(const double dt, const Scene::Method method, 
-              vector<Point> &points, vector<Spring> &springs, const bool interaction)
-{ 
-    switch (method)
-    {
-        case Scene::EULER:
-        {
+void TimeStep(const double dt, const Scene::Method method,
+               vector<Point>& points, vector<Spring>& springs, const bool interaction)
+{
+	switch (method)
+	{
+		case Scene::EULER:
+		{
 			return euler(dt, points, springs, interaction);
-        }
-        
-        case Scene::SYMPLECTIC: 
-        {
-            break;
-        }
+		}
 
-        case Scene::LEAPFROG: 
-        {
-            break;
-        }
+		case Scene::SYMPLECTIC:
+		{
+			break;
+		}
 
-        case Scene::MIDPOINT:
-        {
-            break;  
-        }            
-    }
-}       
+		case Scene::LEAPFROG:
+		{
+			break;
+		}
 
+		case Scene::MIDPOINT:
+		{
+			break;
+		}
+	}
+}

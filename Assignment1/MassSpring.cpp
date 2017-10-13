@@ -26,19 +26,19 @@
 /*----------------------------------------------------------------*/
 
 /* Simulation scene */
-Scene *scene=NULL;   
+Scene* scene = NULL;
 
 /* Time steps to be calculated per displayed output frame 
   (set to 0 to run simulation in real-time) */
-static int steps_per_frame = 0; 
+static int steps_per_frame = 0;
 
 /* Maximum time allowed between updates when running in real-time 
    mode (prevents performing too many calculations when running 
    slower than real time) */
-static double max_update_time = 0.01; 	
+static double max_update_time = 0.01;
 
 /* Variables to keep track of timing information */
-static unsigned long prevTime = 0; 
+static unsigned long prevTime = 0;
 static double remTime = 0;
 
 /******************************************************************
@@ -64,7 +64,6 @@ unsigned long GetTime()
 		.count());
 }
 
-
 /******************************************************************
 *
 * Display
@@ -81,40 +80,39 @@ unsigned long GetTime()
 
 void Display(void)
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 
-    if (steps_per_frame > 0) 
-    {
-        /* Fixed number of time steps per display frame */
-        for(int i=0; i < steps_per_frame; ++i)
-            scene->Update();
-    }
-    else 
-    {
-        /* Attempt to run simulation in real-time */
-        unsigned long curTime = GetTime();
-        double timePassed = (curTime - prevTime)/1000.0;
-        if(timePassed > max_update_time)
-            timePassed = max_update_time;
-        
-        timePassed += remTime;
-        
-        int steps = (int)(timePassed / scene->GetStep());
-		
-        for(int i=0; i < steps; i++)
-            scene->Update();
-        
-        prevTime = curTime;
-        remTime = fmod(timePassed, scene->GetStep());
-    }
-	
-    /* Scene is rendered after simulation time step(s) */
-    scene->Render();
-   
-    glutPostRedisplay();
-    glutSwapBuffers();
+	if (steps_per_frame > 0)
+	{
+		/* Fixed number of time steps per display frame */
+		for (int i = 0; i < steps_per_frame; ++i)
+			scene->Update();
+	}
+	else
+	{
+		/* Attempt to run simulation in real-time */
+		unsigned long curTime = GetTime();
+		double timePassed = (curTime - prevTime) / 1000.0;
+		if (timePassed > max_update_time)
+			timePassed = max_update_time;
+
+		timePassed += remTime;
+
+		int steps = (int)(timePassed / scene->GetStep());
+
+		for (int i = 0; i < steps; i++)
+			scene->Update();
+
+		prevTime = curTime;
+		remTime = fmod(timePassed, scene->GetStep());
+	}
+
+	/* Scene is rendered after simulation time step(s) */
+	scene->Render();
+
+	glutPostRedisplay();
+	glutSwapBuffers();
 }
-
 
 /******************************************************************
 *
@@ -126,9 +124,8 @@ void Display(void)
 
 void Reshape(int width, int height)
 {
-    glViewport(0, 0, width, height);
+	glViewport(0, 0, width, height);
 }
-
 
 /******************************************************************
 *
@@ -140,9 +137,8 @@ void Reshape(int width, int height)
 
 void Idle(void)
 {
-    glutPostRedisplay();
+	glutPostRedisplay();
 }
-
 
 /******************************************************************
 *
@@ -155,24 +151,23 @@ void Idle(void)
 
 void Init(void)
 {
-    /* Set background (clear) color to black */
-    glClearColor(0.0, 0.0, 0.0, 0.0);
+	/* Set background (clear) color to black */
+	glClearColor(0.0, 0.0, 0.0, 0.0);
 
-    /* Set appropriate mode for specifying projection matrix */
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
+	/* Set appropriate mode for specifying projection matrix */
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
 
-    /* Use orthographic projection */
-    glOrtho(-3.0, 3.0, -3.0, 3.0, -3.0, 3.0);
+	/* Use orthographic projection */
+	glOrtho(-3.0, 3.0, -3.0, 3.0, -3.0, 3.0);
 
-    /* Back to modelview mode for object rendering */
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
+	/* Back to modelview mode for object rendering */
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 
-    /* Store start time */
-    prevTime = GetTime();
+	/* Store start time */
+	prevTime = GetTime();
 }
-
 
 /******************************************************************
 *
@@ -184,22 +179,22 @@ void Init(void)
 *
 *******************************************************************/
 
-void Keyboard(unsigned char key, int x, int y)   
-{                                                
-    switch( key )                                
-    {      
-        case 'q': case 'Q':        
-            exit(0);        
-            break;    
+void Keyboard(unsigned char key, int x, int y)
+{
+	switch (key)
+	{
+		case 'q': case 'Q':
+			exit(0);
+			break;
 
-        case 'f':
-            /* Toggle (hard-coded) external force on a mass point */
-            scene->ToggleUserForce();
-            break;
-    }                                              
-    
-    glutPostRedisplay();
-}   
+		case 'f':
+			/* Toggle (hard-coded) external force on a mass point */
+			scene->ToggleUserForce();
+			break;
+	}
+
+	glutPostRedisplay();
+}
 
 /******************************************************************
 *
@@ -212,20 +207,19 @@ void Keyboard(unsigned char key, int x, int y)
 
 int main(int argc, char** argv)
 {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
-    glutInitWindowSize(600, 600);
-    glutCreateWindow("Mass-Spring Example");
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+	glutInitWindowSize(600, 600);
+	glutCreateWindow("Mass-Spring Example");
 
-    scene = new Scene(argc, argv);
-    Init();    
-    glutDisplayFunc(Display);
-    glutReshapeFunc(Reshape);
-    glutKeyboardFunc(Keyboard);
-    glutIdleFunc(Idle);
-	
-    glutMainLoop();
-	
-    return EXIT_SUCCESS;
+	scene = new Scene(argc, argv);
+	Init();
+	glutDisplayFunc(Display);
+	glutReshapeFunc(Reshape);
+	glutKeyboardFunc(Keyboard);
+	glutIdleFunc(Idle);
+
+	glutMainLoop();
+
+	return EXIT_SUCCESS;
 }
-

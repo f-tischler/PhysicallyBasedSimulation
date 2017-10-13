@@ -15,7 +15,6 @@
 #ifndef __SPRING_H__
 #define __SPRING_H__
 
-#include "Vec2.h"
 #include "Point.h"
 
 class Spring
@@ -48,12 +47,12 @@ public:                  /* Various constructors */
     void render();
 
     void setRestLength(double L);
-    double getRestLength();
+    double getRestLength() const;
 
     void setStiffness(double k);
-    double getStiffness();
+    double getStiffness() const;
 
-    Point *getPoint(int i);     /* Return end point 0 or 1 */
+    Point *getPoint(int i) const;     /* Return end point 0 or 1 */
 };
 
 #endif
