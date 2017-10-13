@@ -1,0 +1,69 @@
+{
+    // Informationen zu dieser Datei finden Sie unter https://go.microsoft.com//fwlink//?linkid=834763.
+    "configurations": [
+      {
+        "name": "x86-Debug",
+        "generator": "Ninja",
+        "configurationType": "Debug",
+        "inheritEnvironments": [ "msvc_x86" ],
+        "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+        "cmakeCommandArgs": "",
+        "buildCommandArgs": "-v",
+        "ctestCommandArgs": "",
+        "variables": [
+          {
+            "name": "CMAKE_TOOLCHAIN_FILE",
+            "value": "C:\\Users\\Florian\\Dev\\projects\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+          }
+        ]
+      },
+      {
+        "name": "x86-Release",
+        "generator": "Ninja",
+        "configurationType": "RelWithDebInfo",
+        "inheritEnvironments": [ "msvc_x86" ],
+        "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+        "cmakeCommandArgs": "",
+        "buildCommandArgs": "-v",
+        "ctestCommandArgs": "",
+        "variables": [
+          {
+            "name": "CMAKE_TOOLCHAIN_FILE",
+            "value": "C:\\Users\\Florian\\Dev\\projects\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+          }
+        ]
+      },
+      {
+        "name": "x64-Debug",
+        "generator": "Ninja",
+        "configurationType": "Debug",
+        "inheritEnvironments": [ "msvc_x64" ],
+        "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+        "cmakeCommandArgs": "",
+        "buildCommandArgs": "-v",
+        "ctestCommandArgs": "",
+        "variables": [
+          {
+            "name": "CMAKE_TOOLCHAIN_FILE",
+            "value": "C:\\Users\\Florian\\Dev\\projects\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+          }
+        ]
+      },
+      {
+        "name": "x64-Release",
+        "generator": "Ninja",
+        "configurationType": "RelWithDebInfo",
+        "inheritEnvironments": [ "msvc_x64" ],
+        "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+        "cmakeCommandArgs": "",
+        "buildCommandArgs": "-v",
+        "ctestCommandArgs": "",
+        "variables": [
+          {
+            "name": "CMAKE_TOOLCHAIN_FILE",
+            "value": "C:\\Users\\Florian\\Dev\\projects\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+          }
+        ]
+      }
+    ]
+}
