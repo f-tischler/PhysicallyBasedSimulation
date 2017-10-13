@@ -20,6 +20,7 @@
 /* Standard includes */
 #include <iostream>
 #include <vector>
+#include <random>
 using namespace std;
 
 /* Local includes */
@@ -46,6 +47,9 @@ void euler(const double dt,
 		   vector<Spring> &springs,
            const bool interaction)
 {
+	static default_random_engine rng;
+	static auto rnd = uniform_real_distribution<>(-50, 50);
+
 	for(auto& point : points)
 	{
 		if(point.isFixed())
@@ -57,8 +61,7 @@ void euler(const double dt,
 		if(interaction)
 		{
 			point.setUserForce(point.getUserForce() + Vec2(
-				rand() % 50 * (rand() % 2 ? -1 : 1),
-				rand() % 50));
+				rnd(rng), abs(rnd(rng))));
 		}
 
 		point.setPos(point.getPos() + point.getVel() * dt);
