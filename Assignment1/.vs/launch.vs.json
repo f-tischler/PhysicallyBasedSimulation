@@ -6,7 +6,21 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
-      "name": "Assignment1.exe"
+      "name": "Spring"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [ "-testcase hanging", "-damp 0.5", "-stiff 40" ],
+      "name": "Hanging"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [ "-testcase falling", "-damp 0.4", "-stiff 40" ],
+      "name": "Falling"
     }
   ]
 }
