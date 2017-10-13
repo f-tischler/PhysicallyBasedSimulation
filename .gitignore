@@ -34,3 +34,4 @@
 **/build/
 **/.vs/*
 !**/.vs/*.json
+Assignment1/CMakeSettings.json
