@@ -3,7 +3,6 @@ project(Assignment1 LANGUAGES CXX)
 
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /wd4141 /WX")
-	set(CMAKE_CXX_FLAGS_DEBUG "/Od")
 	set(CMAKE_CXX_FLAGS_RELEASE "/Ox /Ot /DNDEBUG")
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
