@@ -6,29 +6,103 @@
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
-      "args": [ "-testcase spring1d", "-damp 0.5", "-stiff 40" ],
-      "name": "Spring"
+      "args": [
+        "-method euler",
+        "-testcase spring1d",
+        "-damp 0.5",
+        "-stiff 40"
+      ],
+      "name": "Euler Spring"
     },
     {
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
-      "args": [ "-testcase hanging", "-damp 0.5", "-stiff 40" ],
-      "name": "Hanging Elastic"
+      "args": [
+        "-method midpoint",
+        "-testcase spring1d",
+        "-damp 0.5",
+        "-stiff 40"
+      ],
+      "name": "Midpoint Spring"
     },
     {
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
-      "args": [ "-testcase hanging", "-damp 0.5", "-stiff 100" ],
-      "name": "Hanging Stiff"
+      "args": [
+        "-method euler",
+        "-testcase hanging",
+        "-damp 0.5",
+        "-stiff 40"
+      ],
+      "name": "Euler Hanging Elastic"
     },
     {
       "type": "default",
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
-      "args": [ "-testcase falling", "-damp 0.4", "-stiff 40" ],
-      "name": "Falling"
+      "args": [
+        "-method midpoint",
+        "-testcase hanging",
+        "-damp 0.5",
+        "-stiff 40"
+      ],
+      "name": "Midpoint Hanging Elastic"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
+        "-method euler",
+        "-testcase hanging",
+        "-damp 0.5",
+        "-stiff 100"
+      ],
+      "name": "Euler Hanging Stiff"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
+        "-method midpoint",
+        "-testcase hanging",
+        "-damp 0.5",
+        "-stiff 100"
+      ],
+      "name": "Midpoint Hanging Stiff"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
+        "-method euler",
+        "-testcase falling",
+        "-damp 0.4",
+        "-stiff 40"
+      ],
+      "name": "Euler Falling"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
+        "-method midpoint",
+        "-testcase falling",
+        "-damp 0.4",
+        "-stiff 40"
+      ],
+      "name": "Midpoint Falling"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "name": "Assignment1.exe"
     }
   ]
 }
