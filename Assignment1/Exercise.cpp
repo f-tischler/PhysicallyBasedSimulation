@@ -74,6 +74,12 @@ void update_forces(Point& point, const vector<Spring>& springs)
 	point.addForce(point.getUserForce());
 }
 
+Vec2 compute_acceleration(Point& point, const vector<Spring>& springs)
+{
+	update_forces(point, springs);
+	return compute_acceleration(point);
+}
+
 void euler(const double dt,
            vector<Point>& points,
            vector<Spring>& springs,
@@ -96,17 +102,21 @@ void euler(const double dt,
 				rnd(rng), abs(rnd(rng))));
 		}
 
-		point.setPos(point.getPos() + point.getVel() * dt);
+		// x(t + h) = x(t) + h * v(t)
+		// v(t + h) = v(t) + h * a(t)
 
-		update_forces(point, springs);
+		const auto new_position = point.getPos() + point.getVel() * dt;
+		const auto a = compute_acceleration(point, springs);
 
-		const auto a = compute_acceleration(point);
-
+		point.setPos(new_position);
 		point.setVel(point.getVel() + a * dt);
 	}
 }
 
-void midpoint(const double dt, vector<Point>& points, vector<Spring>& springs, const bool interaction)
+void symplectic(const double dt,
+				vector<Point>& points,
+				vector<Spring>& springs,
+				const bool interaction)
 {
 	static default_random_engine rng;
 	static auto rnd = uniform_real_distribution<>(-50, 50);
@@ -125,9 +135,40 @@ void midpoint(const double dt, vector<Point>& points, vector<Spring>& springs, c
 				rnd(rng), abs(rnd(rng))));
 		}
 
-		update_forces(point, springs);
+		// x(t + h) = x(t) + h * v(t)
+		// v(t + h) = v(t) + h * a(t + h)
 
-		const auto a = compute_acceleration(point);
+		point.setPos(point.getPos() + point.getVel() * dt);
+
+		const auto a = compute_acceleration(point, springs);
+
+		point.setVel(point.getVel() + a * dt);
+	}
+}
+
+void midpoint(const double dt, 
+			  vector<Point>& points, 
+			  vector<Spring>& springs, 
+	          const bool interaction)
+{
+	static default_random_engine rng;
+	static auto rnd = uniform_real_distribution<>(-50, 50);
+
+	for (auto& point : points)
+	{
+		if (point.isFixed())
+			continue;
+
+		// gravity
+		point.setUserForce(Vec2(0, -10));
+
+		if (interaction)
+		{
+			point.setUserForce(point.getUserForce() + Vec2(
+				rnd(rng), abs(rnd(rng))));
+		}
+
+		const auto a = compute_acceleration(point, springs);
 
 		const auto original_velocity = point.getVel();
 
@@ -137,16 +178,13 @@ void midpoint(const double dt, vector<Point>& points, vector<Spring>& springs, c
 
 		point.setPos(point.getPos() + dt / 2.0 * point.getVel());
 
-		update_forces(point, springs);
-
-		const auto a_new = compute_acceleration(point);
+		const auto a_new = compute_acceleration(point, springs);
 
 		point.setPos(original_position + dt * point.getVel());
 
 		point.setVel(original_velocity + dt * a_new);
 	}
 }
-
 
 /******************************************************************
 *
@@ -172,7 +210,7 @@ void TimeStep(const double dt, const Scene::Method method,
 
 		case Scene::SYMPLECTIC:
 		{
-			break;
+			return symplectic(dt, points, springs, interaction);
 		}
 
 		case Scene::LEAPFROG:
