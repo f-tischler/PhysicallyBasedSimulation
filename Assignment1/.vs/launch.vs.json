@@ -19,6 +19,18 @@
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
       "args": [
+        "-method symplectic",
+        "-testcase spring1d",
+        "-damp 0.5",
+        "-stiff 40"
+      ],
+      "name": "Symplectic Spring"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
         "-method midpoint",
         "-testcase spring1d",
         "-damp 0.5",
@@ -37,6 +49,18 @@
         "-stiff 40"
       ],
       "name": "Euler Hanging Elastic"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
+        "-method symplectic",
+        "-testcase hanging",
+        "-damp 0.5",
+        "-stiff 40"
+      ],
+      "name": "Symplectic Hanging Elastic"
     },
     {
       "type": "default",
@@ -67,6 +91,18 @@
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
       "args": [
+        "-method symplectic",
+        "-testcase hanging",
+        "-damp 0.5",
+        "-stiff 100"
+      ],
+      "name": "Symplectic Hanging Stiff"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
         "-method midpoint",
         "-testcase hanging",
         "-damp 0.5",
@@ -85,6 +121,18 @@
         "-stiff 40"
       ],
       "name": "Euler Falling"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
+        "-method symplectic",
+        "-testcase falling",
+        "-damp 0.4",
+        "-stiff 40"
+      ],
+      "name": "Symplectic Falling"
     },
     {
       "type": "default",
