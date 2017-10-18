@@ -186,6 +186,41 @@ void midpoint(const double dt,
 	}
 }
 
+void leapfrog(const double dt, 
+			  vector<Point>& points, 
+			  vector<Spring>& springs, 
+	          const bool interaction)
+{
+    static default_random_engine rng;
+	static auto rnd = uniform_real_distribution<>(-50, 50);
+
+	for (auto& point : points)
+	{
+		if (point.isFixed())
+			continue;
+
+		// gravity
+		point.setUserForce(Vec2(0, -10));
+
+		if (interaction)
+		{
+			point.setUserForce(point.getUserForce() + Vec2(
+				rnd(rng), abs(rnd(rng))));
+		}
+
+		const auto a = compute_acceleration(point, springs);
+
+        const auto old_velocity = point.getVel() - ( dt / 2.0 * a );
+                
+        const auto new_velocity = old_velocity + ( dt * a );
+        
+        point.setPos(point.getPos() + dt  * new_velocity);
+        
+        point.setVel(new_velocity);
+    
+    }
+    
+}
 /******************************************************************
 *
 * TimeStep
@@ -215,7 +250,7 @@ void TimeStep(const double dt, const Scene::Method method,
 
 		case Scene::LEAPFROG:
 		{
-			break;
+			return leapfrog(dt, points, springs, interaction);
 		}
 
 		case Scene::MIDPOINT:
