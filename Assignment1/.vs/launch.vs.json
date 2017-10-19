@@ -43,9 +43,21 @@
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
       "args": [
+        "-method leapfrog",
+        "-testcase spring1d",
+        "-damp 0.5",
+        "-stiff 40"
+      ],
+      "name": "Leapfrog Spring"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
         "-method euler",
         "-testcase hanging",
-        "-damp 0.5",
+        "-damp 0.3",
         "-stiff 40"
       ],
       "name": "Euler Hanging Elastic"
@@ -57,7 +69,7 @@
       "args": [
         "-method symplectic",
         "-testcase hanging",
-        "-damp 0.5",
+        "-damp 0.3",
         "-stiff 40"
       ],
       "name": "Symplectic Hanging Elastic"
@@ -69,10 +81,22 @@
       "args": [
         "-method midpoint",
         "-testcase hanging",
-        "-damp 0.5",
+        "-damp 0.3",
         "-stiff 40"
       ],
       "name": "Midpoint Hanging Elastic"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
+        "-method leapfrog",
+        "-testcase hanging",
+        "-damp 0.3",
+        "-stiff 40"
+      ],
+      "name": "Leapfrog Hanging Elastic"
     },
     {
       "type": "default",
@@ -115,6 +139,18 @@
       "project": "CMakeLists.txt",
       "projectTarget": "Assignment1.exe",
       "args": [
+        "-method leapfrog",
+        "-testcase hanging",
+        "-damp 0.5",
+        "-stiff 100"
+      ],
+      "name": "Leapfrog Hanging Stiff"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
         "-method euler",
         "-testcase falling",
         "-damp 0.4",
@@ -133,6 +169,18 @@
         "-stiff 40"
       ],
       "name": "Symplectic Falling"
+    },
+    {
+      "type": "default",
+      "project": "CMakeLists.txt",
+      "projectTarget": "Assignment1.exe",
+      "args": [
+        "-method leapfrog",
+        "-testcase falling",
+        "-damp 0.4",
+        "-stiff 40"
+      ],
+      "name": "Leapfrog Falling"
     },
     {
       "type": "default",
