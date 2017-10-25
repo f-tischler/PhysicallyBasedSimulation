@@ -88,27 +88,34 @@ Vec2 compute_acceleration(Point& point, const vector<Spring>& springs)
 	return compute_acceleration(point);
 }
 
+void apply_external_forces(Point& point, const bool interaction)
+{
+    static default_random_engine rng;
+    static uniform_real_distribution<> rnd(-50, 50);
+
+    // gravity
+    static constexpr auto g = -10;
+
+    point.setUserForce(Vec2(0, point.getMass() * g));
+
+    if (interaction)
+    {
+        point.setUserForce(point.getUserForce() + Vec2(
+            rnd(rng), abs(rnd(rng))));
+    }
+}
+
 void euler(const double dt,
            vector<Point>& points,
            vector<Spring>& springs,
            const bool interaction)
 {
-	static default_random_engine rng;
-	static auto rnd = uniform_real_distribution<>(-50, 50);
-
 	for (auto& point : points)
 	{
 		if (point.isFixed())
 			continue;
 
-		// gravity
-		point.setUserForce(Vec2(0, -10 * point.getMass()));
-
-		if (interaction)
-		{
-			point.setUserForce(point.getUserForce() + Vec2(
-				rnd(rng), abs(rnd(rng))));
-		}
+		apply_external_forces(point, interaction);
 
 		// x(t + h) = x(t) + h * v(t)
 		// v(t + h) = v(t) + h * a(t)
@@ -126,22 +133,12 @@ void symplectic(const double dt,
 				vector<Spring>& springs,
 				const bool interaction)
 {
-	static default_random_engine rng;
-	static auto rnd = uniform_real_distribution<>(-50, 50);
-
 	for (auto& point : points)
 	{
 		if (point.isFixed())
 			continue;
 
-		// gravity
-		point.setUserForce(Vec2(0, -10 * point.getMass()));
-
-		if (interaction)
-		{
-			point.setUserForce(point.getUserForce() + Vec2(
-				rnd(rng), abs(rnd(rng))));
-		}
+        apply_external_forces(point, interaction);
 
 		// x(t + h) = x(t) + h * v(t)
 		// v(t + h) = v(t) + h * a(t + h)
@@ -159,22 +156,12 @@ void midpoint(const double dt,
 			  vector<Spring>& springs, 
 	          const bool interaction)
 {
-	static default_random_engine rng;
-	static auto rnd = uniform_real_distribution<>(-50, 50);
-
 	for (auto& point : points)
 	{
 		if (point.isFixed())
 			continue;
 
-		// gravity
-		point.setUserForce(Vec2(0, -10 * point.getMass()));
-
-		if (interaction)
-		{
-			point.setUserForce(point.getUserForce() + Vec2(
-				rnd(rng), abs(rnd(rng))));
-		}
+        apply_external_forces(point, interaction);
 
 		const auto a = compute_acceleration(point, springs);
 
@@ -199,22 +186,12 @@ void leapfrog(const double dt,
 			  vector<Spring>& springs, 
 	          const bool interaction)
 {
-    static default_random_engine rng;
-	static auto rnd = uniform_real_distribution<>(-50, 50);
-
 	for (auto& point : points)
 	{
 		if (point.isFixed())
 			continue;
 
-		// gravity
-		point.setUserForce(Vec2(0, -10 * point.getMass()));
-
-		if (interaction)
-		{
-			point.setUserForce(point.getUserForce() + Vec2(
-				rnd(rng), abs(rnd(rng))));
-		}
+        apply_external_forces(point, interaction);
 
 		const auto a = compute_acceleration(point, springs);
 
@@ -225,9 +202,7 @@ void leapfrog(const double dt,
         point.setPos(point.getPos() + dt  * new_velocity);
         
         point.setVel(new_velocity);
-    
     }
-    
 }
 
 void analytical(const double dt,
@@ -275,6 +250,7 @@ void analytical(const double dt,
  
             const auto w = sqrt(k / m);
 
+            // ensure under-damping
             assert(wr * wr  < w * w &&
                 point.getDamping() < 2 * sqrt(m * spring.getStiffness()));
 
