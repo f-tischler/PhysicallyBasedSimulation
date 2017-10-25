@@ -97,6 +97,11 @@ public:
 		return sqrt(x * x + y * y);
 	}
 
+    double length_sq(void) const
+    {
+        return x * x + y * y;
+    }
+
 	Vec2 normalize() const
 	{
 		return Vec2(x, y) / Vec2(x, y).length();
