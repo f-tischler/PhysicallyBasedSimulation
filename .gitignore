@@ -40,3 +40,4 @@ Assignment1/CMakeSettings.json
 **/.codelite
 **/*.project
 **/*.workspace
+**/.vs/VSWorkspaceState.json
