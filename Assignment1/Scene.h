@@ -42,6 +42,11 @@ private:
 	double damping; /* Identical damping for all points */
 	bool interaction; /* Toggle for (hard-coded) external force */
 
+
+	double initial_mass; /* Identical mass for all points */
+	double initial_stiffness; /* Identical spring stiffness for all springs */
+	double initial_damping; /* Identical damping for all points */
+
 protected:
 	vector<Point> points;
 	vector<Spring> springs;
@@ -58,6 +63,11 @@ public:
 
 	double GetStep() const; /* Return time step */
 	void ToggleUserForce(); /* Toggle external force On/Off */
+
+	void increaseMass(double value);
+	void increaseStiff(double value);
+	void increaseDamp(double value);
+	void resetInitial();
 };
 
 #endif

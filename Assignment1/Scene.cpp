@@ -44,6 +44,10 @@ Scene::Scene(void)
 	damping = 0.08;
 	interaction = false;
 
+
+	initial_stiffness = stiffness;
+	initial_mass = mass;
+	initial_damping = damping;
 	Init();
 	PrintSettings();
 }
@@ -165,6 +169,9 @@ Scene::Scene(int argc, char* argv[])
 		}
 	}
 
+	initial_stiffness = stiffness;
+	initial_mass = mass;
+	initial_damping = damping;
 	Init();
 	PrintSettings();
 }
@@ -297,4 +304,43 @@ double Scene::GetStep(void) const
 void Scene::ToggleUserForce(void)
 {
 	interaction = !interaction;
+}
+
+void Scene::resetInitial()
+{
+	mass = initial_mass;
+	damping = initial_damping;
+	stiffness = initial_stiffness;
+	points.clear();
+	springs.clear();
+	Init();
+	PrintSettings();
+}
+
+void Scene::increaseMass(double value)
+{
+
+	this->mass+=value;
+	points.clear();
+	springs.clear();
+	Init();
+	PrintSettings();
+}
+
+void Scene::increaseStiff(double value)
+{
+	this->stiffness+=value;
+	points.clear();
+	springs.clear();
+	Init();
+	PrintSettings();
+}
+
+void Scene::increaseDamp(double value)
+{
+	this->damping+=value;
+	points.clear();
+	springs.clear();
+	Init();
+	PrintSettings();
 }

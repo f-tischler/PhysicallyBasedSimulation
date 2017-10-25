@@ -63,7 +63,7 @@ ostream& get_stream()
     {
         fstream s("./lastrun.log", ios_base::out);
 
-        const auto loc = locale("en-US");
+        const auto loc = locale("");
 
         s.imbue(loc);
 

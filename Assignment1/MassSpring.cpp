@@ -22,6 +22,7 @@
 
 #include <chrono>
 #include <ctime>
+#include <iostream>
 
 /*----------------------------------------------------------------*/
 
@@ -191,6 +192,20 @@ void Keyboard(unsigned char key, int x, int y)
 			/* Toggle (hard-coded) external force on a mass point */
 			scene->ToggleUserForce();
 			break;
+        //Add user input for changing scene parameter
+		case 'm':
+			scene->increaseMass(0.01);
+			break;
+		case 's':
+			scene->increaseStiff(10.0);
+			break;
+		case 'd':
+			scene->increaseDamp(0.01);
+			break;
+		case 'r':
+			scene->resetInitial();
+			break;
+
 	}
 
 	glutPostRedisplay();
