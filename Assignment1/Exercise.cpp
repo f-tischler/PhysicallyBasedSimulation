@@ -20,11 +20,19 @@
 /* Standard includes */
 #include <vector>
 #include <random>
+#include <cassert>
 using namespace std;
 
 /* Local includes */
 #include "Vec2.h"
 #include "Scene.h"
+
+Point& get_other_spring_end(const Point& point, const Spring& spring)
+{
+    return spring.getPoint(0) == &point
+        ? *spring.getPoint(1)
+        : *spring.getPoint(0);
+}
 
 Vec2 compute_internal_forces(const Point& point, const vector<Spring>& springs)
 {
@@ -94,7 +102,7 @@ void euler(const double dt,
 			continue;
 
 		// gravity
-		point.setUserForce(Vec2(0, -10));
+		point.setUserForce(Vec2(0, -10 * point.getMass()));
 
 		if (interaction)
 		{
@@ -127,7 +135,7 @@ void symplectic(const double dt,
 			continue;
 
 		// gravity
-		point.setUserForce(Vec2(0, -10));
+		point.setUserForce(Vec2(0, -10 * point.getMass()));
 
 		if (interaction)
 		{
@@ -160,7 +168,7 @@ void midpoint(const double dt,
 			continue;
 
 		// gravity
-		point.setUserForce(Vec2(0, -10));
+		point.setUserForce(Vec2(0, -10 * point.getMass()));
 
 		if (interaction)
 		{
@@ -200,7 +208,7 @@ void leapfrog(const double dt,
 			continue;
 
 		// gravity
-		point.setUserForce(Vec2(0, -10));
+		point.setUserForce(Vec2(0, -10 * point.getMass()));
 
 		if (interaction)
 		{
@@ -221,6 +229,73 @@ void leapfrog(const double dt,
     }
     
 }
+
+void analytical(const double dt,
+				vector<Point>& points,
+				vector<Spring>& springs,
+				const bool interaction)
+{
+    static constexpr auto g = -10.0;
+
+	static auto t = 0.0;
+	
+	t += dt;
+
+	for(auto& point : points)
+	{
+        if(point.isFixed()) 
+            continue;
+
+        const auto m = point.getMass();
+        const auto d = point.getDamping();
+
+	    const auto wr = d / (2 * m);
+
+	    for(const auto& spring : springs)
+	    {
+            if (spring.getPoint(0) != &point &&
+                spring.getPoint(1) != &point)
+            {
+                continue;
+            }
+
+            const auto& spring_point = get_other_spring_end(point, spring);
+
+            const auto connection =
+                spring_point.getPos() - point.getPos();
+
+            const auto direction = connection.normalize();
+
+            const auto actual_gravity = g * abs(direction.y);
+
+            const auto l = spring.getRestLength();
+            const auto k = spring.getStiffness();
+
+            const auto x0 = -l;
+ 
+            const auto w = sqrt(k / m);
+
+            assert(wr * wr  < w * w &&
+                point.getDamping() < 2 * sqrt(m * spring.getStiffness()));
+
+            const auto wbar = sqrt(w * w - wr * wr);
+
+            const auto a = m * actual_gravity / k;
+
+            //assert(w * cos(t * w) - wr * sin(w * t) > 0.00001 && "invalid value");
+
+            const auto b = a * (wr / w);
+                     
+            // update position --------------------------------------------------------------
+            const auto x = exp(-wr * t) * (a*cos(wbar * t) + b *sin(wbar * t)) - 
+                m * actual_gravity / k + x0;
+
+            point.setPos(spring_point.getPos() + x * direction);
+	    }
+	}
+}
+
+
 /******************************************************************
 *
 * TimeStep
@@ -250,7 +325,8 @@ void TimeStep(const double dt, const Scene::Method method,
 
 		case Scene::LEAPFROG:
 		{
-			return leapfrog(dt, points, springs, interaction);
+            return analytical(dt, points, springs, interaction);
+            //return leapfrog(dt, points, springs, interaction);
 		}
 
 		case Scene::MIDPOINT:
