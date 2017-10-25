@@ -191,61 +191,61 @@ void apply_method(vector<Point>& points,
 }
 
 void analytical(const double dt,
-    vector<Point>& points,
-    vector<Spring>& springs)
-{
-    static constexpr auto g = -10.0;
-
-    const auto t = get_time();
-
-    apply_method(points, false, [&](auto& point)
-    {
-        const auto m = point.getMass();
-        const auto d = point.getDamping();
-
-        const auto wr = d / (2 * m);
-
-        for (const auto& spring : springs)
-        {
-            if (spring.getPoint(0) != &point &&
-                spring.getPoint(1) != &point)
+                vector<Point>& points,
+                const vector<Spring>& springs)
             {
-                continue;
+                static constexpr auto g = -10.0;
+
+                const auto t = get_time();
+
+                apply_method(points, false, [&](auto& point)
+                {
+                    const auto m = point.getMass();
+                    const auto d = point.getDamping();
+
+                    const auto wr = d / (2 * m);
+
+                    for (const auto& spring : springs)
+                    {
+                        if (spring.getPoint(0) != &point &&
+                            spring.getPoint(1) != &point)
+                        {
+                            continue;
+                        }
+
+                        const auto& spring_point = get_other_spring_end(point, spring);
+
+                        const auto connection =
+                            spring_point.getPos() - point.getPos();
+
+                        const auto direction = connection.normalize();
+
+                        const auto actual_gravity = g * abs(direction.y);
+
+                        const auto l = spring.getRestLength();
+                        const auto k = spring.getStiffness();
+
+                        const auto x0 = -l;
+
+                        const auto w = sqrt(k / m);
+
+                        // ensure under-damping
+                        assert(wr * wr  < w * w &&
+                            point.getDamping() < 2 * sqrt(m * spring.getStiffness()));
+
+                        const auto wbar = sqrt(w * w - wr * wr);
+
+                        const auto a = m * actual_gravity / k;
+                        const auto b = a * (wr / wbar);
+
+                        // update position --------------------------------------------------------------
+                        const auto x = exp(-wr * t) * (a*cos(wbar * t) + b *sin(wbar * t)) -
+                            m * actual_gravity / k + x0;
+
+                        point.setPos(spring_point.getPos() + x * direction);
+                    }
+                });
             }
-
-            const auto& spring_point = get_other_spring_end(point, spring);
-
-            const auto connection =
-                spring_point.getPos() - point.getPos();
-
-            const auto direction = connection.normalize();
-
-            const auto actual_gravity = g * abs(direction.y);
-
-            const auto l = spring.getRestLength();
-            const auto k = spring.getStiffness();
-
-            const auto x0 = -l;
-
-            const auto w = sqrt(k / m);
-
-            // ensure under-damping
-            assert(wr * wr  < w * w &&
-                point.getDamping() < 2 * sqrt(m * spring.getStiffness()));
-
-            const auto wbar = sqrt(w * w - wr * wr);
-
-            const auto a = m * actual_gravity / k;
-            const auto b = a * (wr / wbar);
-
-            // update position --------------------------------------------------------------
-            const auto x = exp(-wr * t) * (a*cos(wbar * t) + b *sin(wbar * t)) -
-                m * actual_gravity / k + x0;
-
-            point.setPos(spring_point.getPos() + x * direction);
-        }
-    });
-}
 
 void compare(const vector<Point>& expected, const vector<Point>& actual)
 {
@@ -261,13 +261,37 @@ void compare(const vector<Point>& expected, const vector<Point>& actual)
     print(get_time(), sqrt(pos_error / expected.size()));
 }
 
+template<bool Compare, class F>
+void apply_method(const double dt,
+                  vector<Point>& points,
+                  const vector<Spring>& springs,
+                  const bool interaction,
+                  const F& method)
+{
+    if constexpr (Compare)
+    {
+        static auto reference_points = points;
+
+        apply_method(points, false, method);
+
+        analytical(dt, reference_points, springs);
+
+        compare(reference_points, points);
+    }
+    else
+    {
+        apply_method(points, interaction, method);
+    }
+}
+
 template<bool Compare>
 void euler(const double dt,
            vector<Point>& points,
-           vector<Spring>& springs,
+           const vector<Spring>& springs,
            const bool interaction)
 {
-    const auto euler = [&](auto& point)
+    apply_method<Compare>(dt, points, springs, interaction, 
+        [&](auto& point)
     {
         // x(t + h) = x(t) + h * v(t)
         // v(t + h) = v(t) + h * a(t)
@@ -277,31 +301,17 @@ void euler(const double dt,
 
         point.setPos(new_position);
         point.setVel(point.getVel() + a * dt);
-    };
-
-    if constexpr (Compare)
-    {
-        static auto reference_points = points;
-
-        apply_method(points, false, euler);
-        
-        analytical(dt, reference_points, springs);
-
-        compare(reference_points, points);
-    }
-    else
-    {
-        apply_method(points, interaction, euler);
-    }
+    });
 }
 
 template<bool Compare>
 void symplectic(const double dt,
 				vector<Point>& points,
-				vector<Spring>& springs,
+                const vector<Spring>& springs,
 				const bool interaction)
 {
-    const auto symplectic = [&](auto& point)
+    apply_method<Compare>(dt, points, springs, interaction,
+        [&](auto& point)
     {
         // x(t + h) = x(t) + h * v(t)
         // v(t + h) = v(t) + h * a(t + h)
@@ -311,31 +321,17 @@ void symplectic(const double dt,
         const auto a = compute_acceleration(point, springs);
 
         point.setVel(point.getVel() + a * dt);
-    };
-
-    if constexpr (Compare)
-    {
-        static auto reference_points = points;
-
-        apply_method(points, false, symplectic);
-
-        analytical(dt, reference_points, springs);
-
-        compare(reference_points, points);
-    }
-    else
-    {
-        apply_method(points, interaction, symplectic);
-    }
+    });
 }
 
 template<bool Compare>
 void midpoint(const double dt, 
 			  vector<Point>& points, 
-			  vector<Spring>& springs, 
+              const vector<Spring>& springs,
 	          const bool interaction)
 {
-    const auto midpoint = [&](auto& point)
+    apply_method<Compare>(dt, points, springs, interaction,
+        [&](auto& point)
     {
         const auto a = compute_acceleration(point, springs);
 
@@ -352,22 +348,7 @@ void midpoint(const double dt,
         point.setPos(original_position + dt * point.getVel());
 
         point.setVel(original_velocity + dt * a_new);
-    };
-
-    if constexpr (Compare)
-    {
-        static auto reference_points = points;
-
-        apply_method(points, false, midpoint);
-
-        analytical(dt, reference_points, springs);
-
-        compare(reference_points, points);
-    }
-    else
-    {
-        apply_method(points, interaction, midpoint);
-    }
+    });
 }
 
 template<bool Compare>
@@ -376,7 +357,8 @@ void leapfrog(const double dt,
 			  vector<Spring>& springs, 
 	          const bool interaction)
 {
-    const auto leapfrog = [&](auto& point)
+    apply_method<Compare>(dt, points, springs, interaction,
+        [&](auto& point)
     {
         const auto a = compute_acceleration(point, springs);
 
@@ -387,22 +369,7 @@ void leapfrog(const double dt,
         point.setPos(point.getPos() + dt  * new_velocity);
 
         point.setVel(new_velocity);
-    };
-
-    if constexpr (Compare)
-    {
-        static auto reference_points = points;
-
-        apply_method(points, false, leapfrog);
-
-        analytical(dt, reference_points, springs);
-
-        compare(reference_points, points);
-    }
-    else
-    {
-        apply_method(points, interaction, leapfrog);
-    }
+    });
 }
 
 /******************************************************************
