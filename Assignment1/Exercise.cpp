@@ -195,9 +195,9 @@ void leapfrog(const double dt,
 
 		const auto a = compute_acceleration(point, springs);
 
-        const auto old_velocity = point.getVel() - ( dt / 2.0 * a );
+        const auto old_velocity = point.getVel() - dt / 2.0 * a;
                 
-        const auto new_velocity = old_velocity + ( dt * a );
+        const auto new_velocity = old_velocity + dt * a;
         
         point.setPos(point.getPos() + dt  * new_velocity);
         
@@ -207,8 +207,7 @@ void leapfrog(const double dt,
 
 void analytical(const double dt,
 				vector<Point>& points,
-				vector<Spring>& springs,
-				const bool interaction)
+				vector<Spring>& springs)
 {
     static constexpr auto g = -10.0;
 
@@ -257,10 +256,7 @@ void analytical(const double dt,
             const auto wbar = sqrt(w * w - wr * wr);
 
             const auto a = m * actual_gravity / k;
-
-            //assert(w * cos(t * w) - wr * sin(w * t) > 0.00001 && "invalid value");
-
-            const auto b = a * (wr / w);
+            const auto b = a * (wr / wbar);
                      
             // update position --------------------------------------------------------------
             const auto x = exp(-wr * t) * (a*cos(wbar * t) + b *sin(wbar * t)) - 
@@ -301,8 +297,8 @@ void TimeStep(const double dt, const Scene::Method method,
 
 		case Scene::LEAPFROG:
 		{
-            return analytical(dt, points, springs, interaction);
-            //return leapfrog(dt, points, springs, interaction);
+            //return analytical(dt, points, springs);
+            return leapfrog(dt, points, springs, interaction);
 		}
 
 		case Scene::MIDPOINT:
