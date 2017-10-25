@@ -23,6 +23,7 @@
 #include <cassert>
 #include <fstream>
 #include <array>
+
 using namespace std;
 
 /* Local includes */
@@ -45,12 +46,12 @@ void print_headers(ostream& os)
 {
     static constexpr array<char*, 2> headers =
     {
-        "t", "rms"
+        "t,", "rms"
     };
     
     for(const auto header : headers)
     {
-        os << header << ";";
+        os << header;
     }
 
     os << "\n";
@@ -62,7 +63,7 @@ ostream& get_stream()
     {
         fstream s("./lastrun.log", ios_base::out);
 
-        const auto loc = locale("");
+        const auto loc = locale("en-US");
 
         s.imbue(loc);
 
@@ -85,15 +86,20 @@ void print_value(const T& value)
     get_stream() << value;
 }
 
-void print() { print_value(); }
-
 template<class T, class...Ts>
 void print(const T& value, Ts&&...rest)
 {
     print_value(value);
-    print_value(";");
 
-    print(std::forward<Ts>(rest)...);
+    if constexpr(sizeof...(rest) > 0)
+    {
+        print_value(",");
+        print(std::forward<Ts>(rest)...);
+    }
+    else
+    {
+        print_value();
+    }
 }
 
 Point& get_other_spring_end(const Point& point, const Spring& spring)
