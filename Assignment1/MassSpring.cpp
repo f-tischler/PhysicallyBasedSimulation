@@ -42,6 +42,7 @@ static double max_update_time = 0.01;
 static unsigned long prevTime = 0;
 static double remTime = 0;
 
+
 /******************************************************************
 *
 * GetTime
@@ -201,6 +202,9 @@ void Keyboard(unsigned char key, int x, int y)
 			break;
 		case 'd':
 			scene->increaseDamp(0.01);
+			break;
+		case 't':
+			scene->increaseStep(0.001);
 			break;
 		case 'r':
 			scene->resetInitial();

@@ -32,6 +32,7 @@ using namespace std;
 /* External function for implementing the different numerical solvers */
 extern void TimeStep(double dt, Scene::Method method,
                      vector<Point>& points, vector<Spring>& springs, bool userForce);
+extern void reset_time(const double dt);
 
 Scene::Scene(void)
 {
@@ -48,6 +49,7 @@ Scene::Scene(void)
 	initial_stiffness = stiffness;
 	initial_mass = mass;
 	initial_damping = damping;
+	initial_step = step;
 	Init();
 	PrintSettings();
 }
@@ -172,6 +174,7 @@ Scene::Scene(int argc, char* argv[])
 	initial_stiffness = stiffness;
 	initial_mass = mass;
 	initial_damping = damping;
+	initial_step = step;
 	Init();
 	PrintSettings();
 }
@@ -311,13 +314,15 @@ void Scene::resetInitial()
 	mass = initial_mass;
 	damping = initial_damping;
 	stiffness = initial_stiffness;
+	step = initial_step;
 	points.clear();
 	springs.clear();
 	Init();
 	PrintSettings();
+	reset_time(0);
 }
 
-void Scene::increaseMass(double value)
+void Scene::increaseMass(const double value)
 {
 
 	this->mass+=value;
@@ -325,22 +330,35 @@ void Scene::increaseMass(double value)
 	springs.clear();
 	Init();
 	PrintSettings();
+	reset_time(0);
 }
 
-void Scene::increaseStiff(double value)
+void Scene::increaseStiff(const double value)
 {
 	this->stiffness+=value;
 	points.clear();
 	springs.clear();
 	Init();
 	PrintSettings();
+	reset_time(0);
 }
 
-void Scene::increaseDamp(double value)
+void Scene::increaseDamp(const double value)
 {
 	this->damping+=value;
 	points.clear();
 	springs.clear();
 	Init();
 	PrintSettings();
+	reset_time(0);
+}
+
+void Scene::increaseStep(const double value)
+{
+	this->step+=value;
+	points.clear();
+	springs.clear();
+	Init();
+	PrintSettings();
+	reset_time(0);
 }

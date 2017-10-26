@@ -30,6 +30,8 @@ using namespace std;
 #include "Vec2.h"
 #include "Scene.h"
 
+
+
 auto& get_time()
 {
     static auto t = 0.0;
@@ -41,6 +43,7 @@ auto& update_time(const double dt)
 {
     return get_time() += dt;
 }
+
 
 void print_headers(ostream& os)
 {
@@ -67,12 +70,19 @@ ostream& get_stream()
 
         s.imbue(loc);
 
-        print_headers(s);
+      //  print_headers(s);
 
         return s;
     }();
 
     return stream;
+}
+
+
+void reset_time(const double dt)
+{
+    update_time(-get_time());
+    get_stream().flush().seekp(0.0);
 }
 
 void print_value()
@@ -93,7 +103,7 @@ void print(const T& value, Ts&&...rest)
 
     if constexpr(sizeof...(rest) > 0)
     {
-        print_value(",");
+        print_value(";");
         print(std::forward<Ts>(rest)...);
     }
     else

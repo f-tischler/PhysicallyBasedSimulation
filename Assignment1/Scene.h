@@ -43,9 +43,10 @@ private:
 	bool interaction; /* Toggle for (hard-coded) external force */
 
 
-	double initial_mass; /* Identical mass for all points */
-	double initial_stiffness; /* Identical spring stiffness for all springs */
-	double initial_damping; /* Identical damping for all points */
+	double initial_mass;
+	double initial_stiffness;
+	double initial_damping;
+	double initial_step;
 
 protected:
 	vector<Point> points;
@@ -68,6 +69,9 @@ public:
 	void increaseStiff(double value);
 	void increaseDamp(double value);
 	void resetInitial();
+
+	void increaseStep(double d);
+
 };
 
 #endif

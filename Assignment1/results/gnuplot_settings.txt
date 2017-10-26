@@ -1,0 +1,6 @@
+set xlabel "t[s]"
+set ylabel "Normalized RMS Error [%]"
+set datafile separator ";"
+set style line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 ps 1.5
+set decimalsign locale; set decimalsign "."
+plot 'lastrun.log' with lines title "method=euler | dt=0.003 | damping=0.5 | stiffness=40 | mass=0.15"
