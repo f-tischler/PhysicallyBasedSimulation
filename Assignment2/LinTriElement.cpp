@@ -26,9 +26,9 @@ void LinTriElement::ComputeBasisDeriv(int nodeId, /*Vector2*/ Vector3& basisDeri
     double x2 = v2.x;
     double x3 = v3.x;
 
-    double y1 = v1.x;
-    double y2 = v2.x;
-    double y3 = v3.x;
+    double y1 = v1.y;
+    double y2 = v2.y;
+    double y3 = v3.y;
 
     Matrix3x3T P = Matrix3x3T{};
     P(0,0) = 1; 
