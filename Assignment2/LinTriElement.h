@@ -36,6 +36,13 @@ public:
     }
     int GetGlobalID(int elID) const { return nodeID[elID]; }
 
+    double getArea(FEModel* model) const;
+
+    Matrix3x3 getP(const FEModel* model) const;
+    Matrix3x3 getConstants(const FEModel* model) const;
+
+    double getN(int j, const FEModel* model) const;
+
     void AssembleElement(FEModel *model) const;
     void ComputeBasisDeriv(int nodeId, Vector2 &basisDeriv, const FEModel *model) const;
 };

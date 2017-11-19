@@ -99,12 +99,44 @@ void FEModel::SetBoundaryConditions()
 
 void FEModel::ComputeRHS()
 {
-   // Task 3
+    // Task 3
+    for(int i=0; i<elements.size(); i++)
+    {
+        LinTriElement& element = elements[i];
+        double Ae = element.getArea(this);
+
+        int i1 = element.GetGlobalID(0);
+        int i2 = element.GetGlobalID(1);
+        int i3 = element.GetGlobalID(2);
+
+        float fxy1 = Source_Term_f(nodes[i1][0], nodes[i1][1]);
+        float fxy2 = Source_Term_f(nodes[i2][0], nodes[i2][1]);
+        float fxy3 = Source_Term_f(nodes[i3][0], nodes[i3][1]);
+
+        float n1 = element.getN(0, this);
+        float n2 = element.getN(1, this);
+        float n3 = element.getN(2, this);
+
+        printf("------------------------------\n");
+        printf("%.2f %.2f %.2f\n", Ae, fxy1, n1);
+        printf("%.2f %.2f %.2f\n", Ae, fxy2, n2);
+        printf("%.2f %.2f %.2f\n", Ae, fxy3, n3);
+
+        rhs[n1] = Ae * fxy1 * n1;
+        rhs[n2] = Ae * fxy2 * n2;
+        rhs[n3] = Ae * fxy3 * n3;
+    }
 }
 
 void FEModel::Solve() 
-{       
+{   
     vector<double> tmp_rhs = rhs;
+
+    printf("RHS:\n");
+    for(int i = 0; i < rhs.size(); i++)
+        printf("  %.2f\n", rhs[i]);
+    
+
     SparseSymmetricMatrix tmp_K_matrix = K_matrix;
 
     /* Adjust K matrix to accommodate for known values of u on boundary */
@@ -122,10 +154,13 @@ double FEModel::ComputeError()
 {
     double err_nrm = 0.0;
 
+    printf("Result vs Solution:\n");
     for(int i=0; i<num_nodes; i++)
     {
         const Vector2 &pos = GetNodePosition(i);
         error[i] = Boundary_u(pos[0], pos[1]) - solution[i];
+
+        printf("%d: %.2f, %.2f\d\n",i, Boundary_u(pos[0], pos[1]), solution[i]);
     }
     
     abserror = error;

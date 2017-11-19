@@ -95,8 +95,8 @@ public:
                 d[i] = s[i] + beta*d[i];
 
             iter++;
-            cout << "PCG, iter=" << iter << ", deltaNew=" 
-                 << sqrt(deltaNew) << " vs "<< (residual) <<"\n";
+            //cout << "PCG, iter=" << iter << ", deltaNew=" 
+            //     << sqrt(deltaNew) << " vs "<< (residual) <<"\n";
         }   
     }
 
