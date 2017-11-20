@@ -109,19 +109,26 @@ void FEModel::ComputeRHS()
         int i2 = element.GetGlobalID(1);
         int i3 = element.GetGlobalID(2);
 
-        float fxy1 = Source_Term_f(nodes[i1][0], nodes[i1][1]);
-        float fxy2 = Source_Term_f(nodes[i2][0], nodes[i2][1]);
-        float fxy3 = Source_Term_f(nodes[i3][0], nodes[i3][1]);
+        Vector2 v1 = nodes[i1];
+        Vector2 v2 = nodes[i2];
+        Vector2 v3 = nodes[i3];
+
+        float fxy1 = Source_Term_f(v1[0], v1[1]);
+        float fxy2 = Source_Term_f(v2[0], v2[1]);
+        float fxy3 = Source_Term_f(v3[0], v3[1]);
 
         float n1 = element.getN(0, this);
         float n2 = element.getN(1, this);
         float n3 = element.getN(2, this);
 
-        printf("%.2f * %.2f * %.2f\n", Ae , fxy1 , n1);
+        printf("----------------\n");
+        printf("%.5f * %.5f * %.5f\n", Ae , fxy1 , n1);
+        printf("%.5f * %.5f * %.5f\n", Ae , fxy2 , n2);
+        printf("%.5f * %.5f * %.5f\n", Ae , fxy3 , n3);
 
-        rhs[n1] = Ae * fxy1 * n1;
-        rhs[n2] = Ae * fxy2 * n2;
-        rhs[n3] = Ae * fxy3 * n3;
+        rhs[i1] = Ae * fxy1 * n1;
+        rhs[i2] = Ae * fxy2 * n2;
+        rhs[i3] = Ae * fxy3 * n3;
     }
 }
 
@@ -129,12 +136,12 @@ void FEModel::Solve()
 {   
     vector<double> tmp_rhs = rhs;
 
-    printf("RHS:\n");
-    for(int i = 0; i < rhs.size(); i++)
-        printf("  %.2f ", rhs[i]);
+    //printf("RHS:\n");
+    //for(int i = 0; i < rhs.size(); i++)
+    //    printf("  %.5f ", rhs[i]);
     
-
     SparseSymmetricMatrix tmp_K_matrix = K_matrix;
+    tmp_K_matrix.dump();
 
     /* Adjust K matrix to accommodate for known values of u on boundary */
     for(int i=0; i<(int)boundaryConds.size(); i++)
@@ -157,7 +164,7 @@ double FEModel::ComputeError()
         const Vector2 &pos = GetNodePosition(i);
         error[i] = Boundary_u(pos[0], pos[1]) - solution[i];
 
-        //printf("%d: %.2f, %.2f\d\n",i, Boundary_u(pos[0], pos[1]), solution[i]);
+        printf("%d: %.2f, %.2f\d\n",i, Boundary_u(pos[0], pos[1]), solution[i]);
     }
     
     abserror = error;

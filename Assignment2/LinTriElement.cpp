@@ -33,7 +33,7 @@ Matrix3x3 LinTriElement::getP(const FEModel* model) const
 
     Matrix3x3T<double> P{};
     
-    if(true)
+    if(false)
     {
         P(0,0) = 1; 
         P(1,0) = x1; 
@@ -84,19 +84,7 @@ double LinTriElement::getN(int j, const FEModel* model) const
 
 double LinTriElement::getArea(FEModel* model) const
 {
-    auto v1 = model->GetNodePosition(nodeID[0]);
-    auto v2 = model->GetNodePosition(nodeID[1]);
-    auto v3 = model->GetNodePosition(nodeID[2]);
-
-    double ax = v1[0];
-    double bx = v2[0];
-    double cx = v3[0];
-
-    double ay = v1[1];
-    double by = v2[1];
-    double cy = v3[1];
-
-    return 0.5 * (-ay*bx + ax*by + ay * cx -by*cx -ax*cy +bx*cy );
+    return 0.5 * getP(model).Det();
 }
 
 void LinTriElement::ComputeBasisDeriv(int nodeId, Vector2& basisDeriv, const FEModel *model) const
