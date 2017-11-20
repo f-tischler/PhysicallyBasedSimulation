@@ -117,10 +117,7 @@ void FEModel::ComputeRHS()
         float n2 = element.getN(1, this);
         float n3 = element.getN(2, this);
 
-        printf("------------------------------\n");
-        printf("%.2f %.2f %.2f\n", Ae, fxy1, n1);
-        printf("%.2f %.2f %.2f\n", Ae, fxy2, n2);
-        printf("%.2f %.2f %.2f\n", Ae, fxy3, n3);
+        printf("%.2f * %.2f * %.2f\n", Ae , fxy1 , n1);
 
         rhs[n1] = Ae * fxy1 * n1;
         rhs[n2] = Ae * fxy2 * n2;
@@ -134,7 +131,7 @@ void FEModel::Solve()
 
     printf("RHS:\n");
     for(int i = 0; i < rhs.size(); i++)
-        printf("  %.2f\n", rhs[i]);
+        printf("  %.2f ", rhs[i]);
     
 
     SparseSymmetricMatrix tmp_K_matrix = K_matrix;
@@ -160,7 +157,7 @@ double FEModel::ComputeError()
         const Vector2 &pos = GetNodePosition(i);
         error[i] = Boundary_u(pos[0], pos[1]) - solution[i];
 
-        printf("%d: %.2f, %.2f\d\n",i, Boundary_u(pos[0], pos[1]), solution[i]);
+        //printf("%d: %.2f, %.2f\d\n",i, Boundary_u(pos[0], pos[1]), solution[i]);
     }
     
     abserror = error;

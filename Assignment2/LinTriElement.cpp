@@ -19,9 +19,9 @@
 
 Matrix3x3 LinTriElement::getP(const FEModel* model) const
 {
-    auto& v1 = model->GetNodePosition(GetGlobalID(0));
-    auto& v2 = model->GetNodePosition(GetGlobalID(1));
-    auto& v3 = model->GetNodePosition(GetGlobalID(2));
+    auto v1 = model->GetNodePosition(GetGlobalID(0));
+    auto v2 = model->GetNodePosition(GetGlobalID(1));
+    auto v3 = model->GetNodePosition(GetGlobalID(2));
 
     double x1 = v1[0];
     double x2 = v2[0];
@@ -33,7 +33,7 @@ Matrix3x3 LinTriElement::getP(const FEModel* model) const
 
     Matrix3x3T<double> P{};
     
-    if(false)
+    if(true)
     {
         P(0,0) = 1; 
         P(1,0) = x1; 
@@ -53,19 +53,23 @@ Matrix3x3 LinTriElement::getP(const FEModel* model) const
         P(0, 1) = x1; 
         P(0, 2) = y1;
     
-        P(0, 0) = 1; 
-        P(0, 1) = x2; 
-        P(0, 2) = y2;
+        P(1, 0) = 1; 
+        P(1, 1) = x2; 
+        P(1, 2) = y2;
     
         P(2, 0) = 1; 
         P(2, 1) = x3; 
         P(2, 2) = y3;
     }
+
+    return P;
 }
 
 Matrix3x3 LinTriElement::getConstants(const FEModel* model) const
 {
-    return getP(model).Inverse();
+    Matrix3x3 P = getP(model);
+    Matrix3x3 C = P.Inverse();
+    return C;
 }
 
 double LinTriElement::getN(int j, const FEModel* model) const
@@ -75,14 +79,24 @@ double LinTriElement::getN(int j, const FEModel* model) const
     auto y = position[1];
 
     Matrix3x3T<double> c = getConstants(model);
-
-    printf("%.2f + %.2f*%.2f + %.2f*%.2f;\n", c(1, 0),c(1,1),x,c(1,2),y);
     return c(1, 0) + c(1,1)*x + c(1,2)*y;
 }
 
 double LinTriElement::getArea(FEModel* model) const
 {
-    return getP(model).Det() * 0.5;
+    auto v1 = model->GetNodePosition(nodeID[0]);
+    auto v2 = model->GetNodePosition(nodeID[1]);
+    auto v3 = model->GetNodePosition(nodeID[2]);
+
+    double ax = v1[0];
+    double bx = v2[0];
+    double cx = v3[0];
+
+    double ay = v1[1];
+    double by = v2[1];
+    double cy = v3[1];
+
+    return 0.5 * (-ay*bx + ax*by + ay * cx -by*cx -ax*cy +bx*cy );
 }
 
 void LinTriElement::ComputeBasisDeriv(int nodeId, Vector2& basisDeriv, const FEModel *model) const
