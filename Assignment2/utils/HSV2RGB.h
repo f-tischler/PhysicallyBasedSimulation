@@ -23,7 +23,7 @@ void HSV2RGB(double h, double s, double v, double &r, double &g, double &b)
 
     h *= 6.0;
     
-    int i = floor(h);
+    const auto i = static_cast<int>(floor(h));
 
     double f = h - i;
     double p = v * (1.0 - s);

@@ -21,6 +21,10 @@
 #include "HSV2RGB.h"
 #include "FEModel.h"
 
+#include <vector>
+#include <stdio.h>
+#include <algorithm>
+
 /*----------------------------------------------------------------*/
 double Boundary_u(double x, double y)
 {
@@ -100,7 +104,7 @@ void FEModel::SetBoundaryConditions()
 void FEModel::ComputeRHS()
 {
     // Task 3
-    for(int i=0; i<elements.size(); i++)
+    for(auto i=0u; i<elements.size(); i++)
     {
         LinTriElement& element = elements[i];
         double Ae = element.getArea(this);
@@ -113,13 +117,13 @@ void FEModel::ComputeRHS()
         Vector2 v2 = nodes[i2];
         Vector2 v3 = nodes[i3];
 
-        float fxy1 = Source_Term_f(v1[0], v1[1]);
-        float fxy2 = Source_Term_f(v2[0], v2[1]);
-        float fxy3 = Source_Term_f(v3[0], v3[1]);
+        const auto fxy1 = static_cast<float>(Source_Term_f(v1[0], v1[1]));
+        const auto fxy2 = static_cast<float>(Source_Term_f(v2[0], v2[1]));
+        const auto fxy3 = static_cast<float>(Source_Term_f(v3[0], v3[1]));
 
-        float n1 = element.getN(0, this);
-        float n2 = element.getN(1, this);
-        float n3 = element.getN(2, this);
+        const auto n1 = static_cast<float>(element.getN(0, this));
+        const auto n2 = static_cast<float>(element.getN(1, this));
+        const auto n3 = static_cast<float>(element.getN(2, this));
 
         printf("----------------\n");
         printf("%.5f * %.5f * %.5f\n", Ae , fxy1 , n1);
@@ -164,7 +168,7 @@ double FEModel::ComputeError()
         const Vector2 &pos = GetNodePosition(i);
         error[i] = Boundary_u(pos[0], pos[1]) - solution[i];
 
-        printf("%d: %.2f, %.2f\d\n",i, Boundary_u(pos[0], pos[1]), solution[i]);
+        printf("%d: %.2f, %.2f\r\n",i, Boundary_u(pos[0], pos[1]), solution[i]);
     }
     
     abserror = error;
@@ -225,8 +229,14 @@ void FEModel::Render(int toggle_vis)
                 r = g = b = 0.0;
                 HSV2RGB(h, s, v, r, g, b);
 
-                glColor3f(r, g, b);
-                glVertex3f(pos[0], pos[1], 0);
+                glColor3f(
+                    static_cast<GLfloat>(r), 
+                    static_cast<GLfloat>(g),
+                    static_cast<GLfloat>(b));
+
+                glVertex3f(
+                    static_cast<GLfloat>(pos[0]), 
+                    static_cast<GLfloat>(pos[1]), 0);
             }
         }
     }
@@ -246,8 +256,13 @@ void FEModel::Render(int toggle_vis)
                 const Vector2 &pos1 = GetNodePosition(nodeID1);
                 const Vector2 &pos2 = GetNodePosition(nodeID2);
                 
-                glVertex3f(pos1[0], pos1[1], 0);
-                glVertex3f(pos2[0], pos2[1], 0);
+                glVertex3f(
+                    static_cast<GLfloat>(pos1[0]), 
+                    static_cast<GLfloat>(pos1[1]), 0);
+
+                glVertex3f(
+                    static_cast<GLfloat>(pos2[0]), 
+                    static_cast<GLfloat>(pos2[1]), 0);
             }
         }
     }
