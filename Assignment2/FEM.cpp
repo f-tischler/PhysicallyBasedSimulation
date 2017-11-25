@@ -21,13 +21,16 @@
 
 /* Standard includes */
 #include <iostream>
+#include <ctime>
+#include <string>
+
 #include "GL/glut.h"  
 
 /* Local includes */
 #include "FEModel.h"
 
 /*----------------------------------------------------------------*/
-bool toggle_vis = true;         /* Toggle between display of solution and error */ 
+bool toggle_vis = false;         /* Toggle between display of solution and error */ 
 
 FEModel model;
 
@@ -90,13 +93,48 @@ void reshape(int w, int h)
 *
 *******************************************************************/
 
+void runTest()
+{
+    cout << "Test convergence: " << endl;
+    for(auto grid = 2; grid < 100; grid++)
+    {
+        double err_nrm = 0.;
+        clock_t begin = clock();
+        {
+            FEModel testModel;
+            testModel.CreateUniformGridMesh(grid, grid);   
+            
+            testModel.AssembleStiffnessMatrix();           
+            testModel.ComputeRHS();
+            testModel.SetBoundaryConditions();
+            
+            testModel.Solve();
+        
+            err_nrm = testModel.ComputeError();
+        }
+
+        clock_t end = clock();
+        double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+
+        cout << grid << ", " << elapsed_secs << ", " << err_nrm << endl;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     /* Mesh resoluion: gridxgridx2 triangles */
     int grid = 20;    
 
     if(argc == 2)
-        grid = atoi(argv[1]);
+    {
+        if(std::string(argv[1]) == "test")
+        {
+            runTest();
+            return 0;
+        }
+        else
+            grid = atoi(argv[1]);
+    }
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
