@@ -70,7 +70,7 @@ public:
     virtual void AddToStiffnessMatrix(int i, int j, double val) 
     {
     	/* The solver expects a lower triangular matrix */
-    	if (j < i)
+    	if (j <= i)
         	K_matrix(i,j) += val;
     }
 

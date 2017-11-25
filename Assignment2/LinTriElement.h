@@ -25,26 +25,30 @@ class FEModel;  /* Forward declaraion of class FEModel */
 class LinTriElement
 {
 private:
-    int nodeID[3];       /* Global IDs of nodes */
+    int m_nodeID[3];       /* Global IDs of nodes */
+    Vector2 m_center;
+    Matrix3x3 m_coefMat;
+    double m_area;
 
 public:
     LinTriElement(int node0, int node1, int node2)
     {
-        nodeID[0] = node0;
-        nodeID[1] = node1;
-        nodeID[2] = node2;
+        m_nodeID[0] = node0;
+        m_nodeID[1] = node1;
+        m_nodeID[2] = node2;
     }
-    int GetGlobalID(int elID) const { return nodeID[elID]; }
+    int GetGlobalID(int elID) const { return m_nodeID[elID]; }
 
-    double getArea(FEModel* model) const;
+    void AssembleElement(FEModel *model);
+    void ComputeBasisDeriv(int nodeId, Vector2 &basisDeriv) const;
 
-    Matrix3x3 getP(const FEModel* model) const;
-    Matrix3x3 getConstants(const FEModel* model) const;
+    const Matrix3x3& getCoefMat() { return m_coefMat; }
+    const Vector2& getCenter() { return m_center; }
+    double getArea() { return m_area; }
+    double getNj(int j) const;
 
-    double getN(int j, const FEModel* model) const;
-
-    void AssembleElement(FEModel *model) const;
-    void ComputeBasisDeriv(int nodeId, Vector2 &basisDeriv, const FEModel *model) const;
+private:
+    void setup(FEModel* model);
 };
 
 #endif

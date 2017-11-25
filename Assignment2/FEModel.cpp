@@ -21,10 +21,6 @@
 #include "HSV2RGB.h"
 #include "FEModel.h"
 
-#include <vector>
-#include <stdio.h>
-#include <algorithm>
-
 /*----------------------------------------------------------------*/
 double Boundary_u(double x, double y)
 {
@@ -32,10 +28,10 @@ double Boundary_u(double x, double y)
     return 3.0*x*x + 2.0*y*y*y*x;
 }
 
-double Source_Term_f(double x, double y)
+double Source_Term_f(const Vector2& vec)
 {
     /* Source term in Poisson´s equation */
-    return -6.0 - 12.0*y*x;
+    return -6.0 - 12.0*vec[1]*vec[0];
 }
 
 /*----------------------------------------------------------------*/
@@ -103,49 +99,24 @@ void FEModel::SetBoundaryConditions()
 
 void FEModel::ComputeRHS()
 {
-    // Task 3
-    for(auto i=0u; i<elements.size(); i++)
+   // Task 3
+    for(int i = 0; i < num_elems; i++)
     {
         LinTriElement& element = elements[i];
-        double Ae = element.getArea(this);
+        
+        const Vector2& center = element.getCenter();
+        double area = element.getArea();
+        double fxy  = Source_Term_f(center);
 
-        int i1 = element.GetGlobalID(0);
-        int i2 = element.GetGlobalID(1);
-        int i3 = element.GetGlobalID(2);
-
-        Vector2 v1 = nodes[i1];
-        Vector2 v2 = nodes[i2];
-        Vector2 v3 = nodes[i3];
-
-        const auto fxy1 = static_cast<float>(Source_Term_f(v1[0], v1[1]));
-        const auto fxy2 = static_cast<float>(Source_Term_f(v2[0], v2[1]));
-        const auto fxy3 = static_cast<float>(Source_Term_f(v3[0], v3[1]));
-
-        const auto n1 = static_cast<float>(element.getN(0, this));
-        const auto n2 = static_cast<float>(element.getN(1, this));
-        const auto n3 = static_cast<float>(element.getN(2, this));
-
-        printf("----------------\n");
-        printf("%.5f * %.5f * %.5f\n", Ae , fxy1 , n1);
-        printf("%.5f * %.5f * %.5f\n", Ae , fxy2 , n2);
-        printf("%.5f * %.5f * %.5f\n", Ae , fxy3 , n3);
-
-        rhs[i1] = Ae * fxy1 * n1;
-        rhs[i2] = Ae * fxy2 * n2;
-        rhs[i3] = Ae * fxy3 * n3;
+        for(int j = 0; j < 3; j++)
+            rhs[element.GetGlobalID(j)] += area * fxy * element.getNj(j);
     }
 }
 
 void FEModel::Solve() 
-{   
+{       
     vector<double> tmp_rhs = rhs;
-
-    //printf("RHS:\n");
-    //for(int i = 0; i < rhs.size(); i++)
-    //    printf("  %.5f ", rhs[i]);
-    
     SparseSymmetricMatrix tmp_K_matrix = K_matrix;
-    tmp_K_matrix.dump();
 
     /* Adjust K matrix to accommodate for known values of u on boundary */
     for(int i=0; i<(int)boundaryConds.size(); i++)
@@ -162,13 +133,10 @@ double FEModel::ComputeError()
 {
     double err_nrm = 0.0;
 
-    printf("Result vs Solution:\n");
     for(int i=0; i<num_nodes; i++)
     {
         const Vector2 &pos = GetNodePosition(i);
         error[i] = Boundary_u(pos[0], pos[1]) - solution[i];
-
-        printf("%d: %.2f, %.2f\r\n",i, Boundary_u(pos[0], pos[1]), solution[i]);
     }
     
     abserror = error;
@@ -178,8 +146,17 @@ double FEModel::ComputeError()
     /* Compute inner product error norm:  err = sqrt(v*K*v) */
 
     // Task 4
+    vector<double> vectorKU(num_nodes);
+    K_matrix.MultVector(abserror, vectorKU);
 
-    return err_nrm;
+    for (int i = 0; i < num_nodes; i++)
+    {
+        double addError = vectorKU[i] * abserror[i];
+        err_nrm += addError;
+    }
+
+    double sqrtError = sqrt(err_nrm);
+    return sqrtError;
 }
 
 
@@ -229,14 +206,8 @@ void FEModel::Render(int toggle_vis)
                 r = g = b = 0.0;
                 HSV2RGB(h, s, v, r, g, b);
 
-                glColor3f(
-                    static_cast<GLfloat>(r), 
-                    static_cast<GLfloat>(g),
-                    static_cast<GLfloat>(b));
-
-                glVertex3f(
-                    static_cast<GLfloat>(pos[0]), 
-                    static_cast<GLfloat>(pos[1]), 0);
+                glColor3f(r, g, b);
+                glVertex3f(pos[0], pos[1], 0);
             }
         }
     }
@@ -256,13 +227,8 @@ void FEModel::Render(int toggle_vis)
                 const Vector2 &pos1 = GetNodePosition(nodeID1);
                 const Vector2 &pos2 = GetNodePosition(nodeID2);
                 
-                glVertex3f(
-                    static_cast<GLfloat>(pos1[0]), 
-                    static_cast<GLfloat>(pos1[1]), 0);
-
-                glVertex3f(
-                    static_cast<GLfloat>(pos2[0]), 
-                    static_cast<GLfloat>(pos2[1]), 0);
+                glVertex3f(pos1[0], pos1[1], 0);
+                glVertex3f(pos2[0], pos2[1], 0);
             }
         }
     }

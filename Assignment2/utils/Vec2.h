@@ -27,9 +27,7 @@ public:
     
     Vector2T<T> & operator=( const Vector2T<T> &other ) 
     { 
-        m_xy[0]= other.m_xy[0]; 
-        m_xy[1] = other.m_xy[1]; 
-        return *this; 
+        m_xy[0]= other.m_xy[0]; m_xy[1] = other.m_xy[1]; return *this; 
     }
 
     T& operator[](int i) { return m_xy[i]; }

@@ -151,19 +151,6 @@ public:
     int GetNumRows() const { return m_rowData.size(); }
     int GetNumCols() const { return m_numCols; }
 
-    void dump()
-    {
-        printf("Dump sparseSymMat:\n");
-        for(auto& row : m_rowData)
-        {
-            for(auto& kv : row)
-            {
-                printf("%.4f ", kv.second);
-            }
-            printf("\n");
-        }
-    }
-
 private:
     int m_numCols;
     vector<map<int, T> > m_rowData;
