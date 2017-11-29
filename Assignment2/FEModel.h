@@ -19,6 +19,7 @@
 #include "PCGT.h"
 #include "Vec2.h"
 #include "LinTriElement.h"
+#include <vector>
 
 /*----------------------------------------------------------------*/
 class BoundaryCondition

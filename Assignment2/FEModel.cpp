@@ -20,6 +20,8 @@
 
 #include "HSV2RGB.h"
 #include "FEModel.h"
+#include <algorithm>
+#include <vector>
 
 /*----------------------------------------------------------------*/
 double Boundary_u(double x, double y)

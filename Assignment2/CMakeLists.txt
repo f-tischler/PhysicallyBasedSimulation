@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.5.1)
-project(Assignment1 LANGUAGES CXX)
+project(Assignment3 LANGUAGES CXX)
 
 if(MSVC)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /wd4141 /WX")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /wd4141")
 	set(CMAKE_CXX_FLAGS_RELEASE "/Ox /Ot /DNDEBUG")
 else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
@@ -16,9 +16,9 @@ set(SOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/FEModel.cpp
 )
 
-add_executable(Assignment2 ${SOURCE_FILES})
+add_executable(FEM ${SOURCE_FILES})
 
-target_include_directories(Assignment2 PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/utils)
+target_include_directories(FEM PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 
 if(WIN32)
 	find_path(FREEGLUT_INCLUDE_DIR gl/freeglut.h)
@@ -27,11 +27,11 @@ if(WIN32)
 	find_path(OPENGL_INCLUDE_DIR gl/gl.h)
 	find_library(OPENGL_LIBRARY opengl32)
 
-	target_include_directories(Assignment2 PRIVATE ${FREEGLUT_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
-	target_link_libraries(Assignment2 ${FREEGLUT_LIBRARY} ${OPENGL_LIBRARY})
+	target_include_directories(FEM PRIVATE ${FREEGLUT_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR})
+	target_link_libraries(FEM ${FREEGLUT_LIBRARY} ${OPENGL_LIBRARY})
 else()
 	find_package(OpenGL REQUIRED)
 	find_package(GLUT REQUIRED)
 
-	target_link_libraries(Assignment2 ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
+	target_link_libraries(FEM ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
 endif()
