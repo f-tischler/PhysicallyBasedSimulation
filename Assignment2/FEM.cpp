@@ -96,7 +96,7 @@ void reshape(int w, int h)
 void runTest()
 {
     cout << "Test convergence: " << endl;
-    for(auto grid = 2; grid < 100; grid++)
+    for(unsigned int grid = 2; grid < 100; grid++)
     {
         double err_nrm = 0.;
         clock_t begin = clock();
