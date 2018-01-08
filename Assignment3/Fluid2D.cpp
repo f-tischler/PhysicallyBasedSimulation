@@ -143,7 +143,7 @@ void Fluid_2D::step()
                            xVelocity, xVelocityTemp);
     AdvectWithSemiLagrange(xRes, yRes, dt, xVelocity, yVelocity,
                            yVelocity, yVelocityTemp);
- 
+
     /* Copy/update advected fields */
     copyFields();
 
