@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 project(Assignment3 LANGUAGES CXX)
 
-set(CMAKE_BUILD_TYPE Debug)
+
 
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /wd4141")
@@ -36,3 +36,9 @@ else()
 
 	target_link_libraries(FluidSim ${OPENGL_LIBRARIES} ${GLUT_LIBRARY})
 endif()
+
+FIND_PACKAGE(OpenMP)
+IF(OPENMP_FOUND)
+	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+ENDIF()
