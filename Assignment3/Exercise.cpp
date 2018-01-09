@@ -85,8 +85,9 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
         xRes_static=xRes;
     for (int y = 1; y < yRes - 1; ++y) {
         for (int x = 1; x < xRes - 1; ++x) {
-            double xOffset = x - (xVelocity[index(x,y)] * dt);
-            double yOffset = y - (yVelocity[index(x,y)] * dt);
+
+            double xOffset = (double)x - (xVelocity[index(x,y)] * dt);
+            double yOffset = (double)y - (yVelocity[index(x,y)] * dt);
 
             xOffset = std::min((double) (xRes - 2),
                                std::max((double) 1.0f, xOffset));
@@ -115,7 +116,8 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
         iteration+=1;
         for (int y = 1; y < yRes - 1; ++y) {
             for (int x = 1; x < xRes - 1; ++x) {
-                double newValue = ( h2 * divergence[index(x,y)] +
+
+                double newValue = ( divergence[index(x,y)] +
                                     ( pressure[index(x + 1, y)] +
                                       pressure[index(x, y + 1)] +
                                       pressure[index(x - 1, y)] +
@@ -123,7 +125,7 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
                                     )
                                   ) / 4.0f;
 
-                error += abs(pressure[x,y] - newValue);
+                error += abs(pressure[index(x,y)] - newValue);
                 set_point(pressure,x,y,newValue);
             }
         }
@@ -142,14 +144,15 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
 
     for (int y = 1; y < yRes; ++y) {
         for (int x = 1; x < xRes; ++x) {
-            double presxy=pressure[index(x,y)];
-            double presx1y=pressure[index(x-1,y)];
-            double presxy1=pressure[index(x,y-1)];
-            double presx=presxy-presx1y;
-            double presy=presxy-presxy1;
+            double presx2y=pressure[index(x + 1,y)];
+            double presxy2=pressure[index(x,y + 1)];
+            double presx1y=pressure[index(x - 1,y)];
+            double presxy1=pressure[index(x,y - 1)];
+            double presx=presx2y-presx1y;
+            double presy=presxy2-presxy1;
 
-            double deltaxVel = ( (dt / 1.0f) * ( (1.0f / h) * presx));
-            double deltayVel = ( (dt / 1.0f) * ( (1.0f / h) * presy));
+            double deltaxVel = (dt / 1.0f) * (1.0f / h) * presx;
+            double deltayVel = (dt / 1.0f) * (1.0f / h) * presy;
             xVelocity[index(x,y)] = xVelocity[index(x,y)] - deltaxVel;
             yVelocity[index(x,y)] = yVelocity[index(x,y)] - deltayVel;
         }
