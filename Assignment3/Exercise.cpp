@@ -75,19 +75,38 @@ double fastModf(double x, double &part)
     return x - part;
 }
 
-double sampleBilinear(const gsl::span<double> field, double x, double y)
+double sampleBilinear(const gsl::span<double> field,
+                      const double x,
+                      const double y,
+                      const int width,
+                      const int height)
 {
+    const auto border_value = 0.0;
+
     double x_int_part = 0;
     double y_int_part = 0;
 
     const auto x_float_part = fastModf(x, x_int_part);
     const auto y_float_part = fastModf(y, y_int_part);
 
-    const auto tmp1 = field[index({ x_int_part, y_int_part})];
-    const auto tmp2 = field[index({ x_int_part + 1, y_int_part})];
-    const auto tmp3 = field[index({ x_int_part, y_int_part + 1 })];
-    const auto tmp4 = field[index({ x_int_part + 1, y_int_part + 1})];
+    const auto index_x = gsl::narrow<int>(x_int_part);
+    const auto index_y = gsl::narrow<int>(y_int_part);
 
+    const auto tmp1 = 
+        field[index(index_x, index_y)];
+
+    const auto tmp2 = index_x == width - 1
+        ? border_value
+        : field[index(index_x + 1, index_y)];
+
+    const auto tmp3 = index_y == height - 1
+        ? border_value
+        : field[index(index_x, index_y + 1)];
+
+    const auto tmp4 = index_x == width - 1 || index_y == height - 1
+        ? border_value
+        : field[index(index_x + 1, index_y + 1)];
+        
     const auto tmp12 = mix(tmp1, tmp2, x_float_part);
     const auto tmp34 = mix(tmp3, tmp4, x_float_part);
 
@@ -118,10 +137,18 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
             const auto prev_x = x - velocity_x * dt;
             const auto prev_y = y - velocity_y * dt;
 
+            if (prev_x < 0 || prev_x >= xRes ||
+                prev_y < 0 || prev_y >= yRes)
+            {
+                set_point(temp_field_view, x, y, 0);
+                continue;
+            }
+
+
             //Ensures(prev_x > 0 && prev_x < xRes - 1);
             //Ensures(prev_y > 0 && prev_y < yRes - 1);
 
-            const auto new_value = sampleBilinear(field_view, prev_x, prev_y);
+            const auto new_value = sampleBilinear(field_view, prev_x, prev_y, xRes, yRes);
 
             set_point(temp_field_view, x, y, new_value);
         }

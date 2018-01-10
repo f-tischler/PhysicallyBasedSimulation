@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 project(Assignment3 LANGUAGES CXX)
 
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
 
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest /wd4141")
