@@ -95,6 +95,11 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
     const auto temp_field_view = gsl::span<double>(tempField, resolution);
     const auto field_view = gsl::span<double>(field, resolution);
 
+    xVelocity = nullptr;
+    yVelocity = nullptr;
+    tempField = nullptr;
+    field = nullptr;
+
     if(xRes_static == -1)
         xRes_static = xRes;
 
@@ -125,6 +130,10 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
 {
     const auto resolution = xRes * yRes;
     const auto pressure_view = gsl::span<double>(pressure, resolution);
+    //const auto divergence_view = gsl::span<double>(divergence, resolution);
+
+    pressure = nullptr;
+    divergence = nullptr;
 
     auto iteration = 0;
     auto error = 0.0;
@@ -166,6 +175,10 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
     const auto x_velocity_view = gsl::span<double>(xVelocity, resolution);
     const auto y_velocity_view = gsl::span<double>(yVelocity, resolution);
     const auto pressure_view = gsl::span<const double>(pressure, resolution);
+
+    xVelocity = nullptr;
+    yVelocity = nullptr;
+    pressure = nullptr;
 
     for (auto y = 1; y < yRes - 1; ++y)
     {
