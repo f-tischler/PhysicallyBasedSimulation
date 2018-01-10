@@ -17,16 +17,11 @@
 *
 *******************************************************************/
 
-
 #include "Vec2.h"
 #include <math.h>
 #include <algorithm>
 #include <cmath>
 #include "gsl/gsl"
-
-#define skip_source(x, y) if(x >= 90 && x < 110 && y >= 20 && y < 30) continue;
-#define copy_source(x, y, src, dst) if(x >= 90 && x < 110 && y >= 20 && y < 30) dst[index(x,y)]=src[index(x,y)];
-
 
 static int xRes_static = -1;
 
@@ -118,13 +113,12 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
 
     if(xRes_static == -1)
         xRes_static = xRes;
-#pragma omp parallel for
+
+    #pragma omp parallel for
     for (auto y = 0; y < yRes - 0; ++y)
     {
         for (auto x = 0; x < xRes - 0; ++x)
         {
-            copy_source(x,y, field_view,temp_field_view)
-
             const auto velocity_x = x_velocity_view[index(x, y)];
             const auto velocity_y = y_velocity_view[index(x, y)];
 
@@ -166,7 +160,8 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
         const auto write_view = gsl::span<double>(it % 2 == 0
             ? pressure_view
             : pressure_temp_view);
-#pragma omp parallel for reduction(+:error_sq)
+
+        #pragma omp parallel for reduction(+:error_sq)
         for (auto y = 1; y < yRes - 1; ++y) 
         {
             for (auto x = 1; x < xRes - 1; ++x) 
@@ -206,12 +201,11 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
     const auto y_velocity_view = create_view(yVelocity, resolution);
     const auto pressure_view = create_view(pressure, resolution);
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for (auto y = 1; y < yRes - 1; ++y)
     {
         for (auto x = 1; x < xRes - 1; ++x)
         {
-            skip_source(x,y)
             const auto right = pressure_view[index(x + 1, y)];
             const auto mid = pressure_view[index(x, y)];
             const auto left = pressure_view[index(x - 1, y)];
