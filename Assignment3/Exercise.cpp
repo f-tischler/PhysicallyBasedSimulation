@@ -75,7 +75,7 @@ double fastModf(double x, double &part)
     return x - part;
 }
 
-double sampleTrilinear(const gsl::span<double> field, double x, double y)
+double sampleBilinear(const gsl::span<double> field, double x, double y)
 {
     double x_int_part = 0;
     double y_int_part = 0;
@@ -115,18 +115,17 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
             const auto velocity_x = x_velocity_view[index(x, y)];
             const auto velocity_y = y_velocity_view[index(x, y)];
 
-            auto prev_x = gsl::narrow<int>(std::floor(x - velocity_x * dt));
-            auto prev_y = gsl::narrow<int>(std::floor(y - velocity_y * dt));
+            const auto prev_x = x - velocity_x * dt;
+            const auto prev_y = y - velocity_y * dt;
 
             Ensures(prev_x > 0 && prev_x < xRes - 1);
             Ensures(prev_y > 0 && prev_y < yRes - 1);
 
-            const auto new_value = sampleTrilinear(field_view, prev_x, prev_y);
+            const auto new_value = sampleBilinear(field_view, prev_x, prev_y);
 
             set_point(temp_field_view, x, y, new_value);
         }
     }
-
 }
 
 
@@ -135,7 +134,7 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
 {
     const auto resolution = xRes * yRes;
     const auto pressure_view = create_view(pressure, resolution);
-    //const auto divergence_view = create_view(divergence, resolution);
+    const auto divergence_view = create_view(divergence, resolution);
 
     auto iteration = 0;
     auto error = 0.0;
@@ -149,12 +148,13 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
                 const auto current = pressure_view[index(x, y)];
 
                 //Using five points as it is necessary to take the local value into account as well
-                const auto new_value = ( current +
-                    pressure_view[index(x + 1, y)] +
-                    pressure_view[index(x, y + 1)] +
-                    pressure_view[index(x - 1, y)] +
-                    pressure_view[index(x, y - 1)]
-                                  ) / 5.0f;
+                double new_value = ( divergence_view[index(x,y)] +
+                                    ( pressure_view[index(x + 1, y)] +
+                                      pressure_view[index(x, y + 1)] +
+                                      pressure_view[index(x - 1, y)] +
+                                      pressure_view[index(x, y - 1)]
+                                    )
+                                  ) / 4.0f;
 
                 set_point(pressure_view, x, y, new_value);
 
@@ -197,4 +197,5 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
             y_velocity_view[index(x,y)] = y_velocity_view[index(x,y)] - deltay_vel;
         }
     }
+
 }
