@@ -18,13 +18,11 @@
 *******************************************************************/
 
 
-#include "Fluid2D.h"
 #include "Vec2.h"
-#include <iostream>
 #include <math.h>
 #include <algorithm>
 #include <cmath>
-#include <array>
+#include "gsl/gsl"
 
 
 static int xRes_static = -1;
@@ -51,6 +49,11 @@ void set_point(double *field, const int x, const int y, const double value)
     field[index(x, y)] = value;
 }
 
+void set_point(const gsl::span<double> field, const int x, const int y, const double value)
+{
+    field[index(x, y)] = value;
+}
+
 double mix(const double x, const double y, const double alpha)
 {
     return x * (1.0f - alpha) + y * alpha;
@@ -62,8 +65,8 @@ double fastModf(double x, double &part)
     return x - part;
 }
 
-double sampleTrilinear(double *field, double x, double y) {
-    
+double sampleTrilinear(const gsl::span<double> field, double x, double y)
+{
     double x_int_part = 0;
     double y_int_part = 0;
 
@@ -82,9 +85,16 @@ double sampleTrilinear(double *field, double x, double y) {
 }
 
 void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
-                            double *xVelocity, double *yVelocity,
-                            double *field, double* tempField)
+    double *xVelocity, double *yVelocity,
+    double *field, double* tempField)
 {
+    const auto resolution = xRes * yRes;
+
+    const auto x_velocity_view = gsl::span<double>(xVelocity, resolution);
+    const auto y_velocity_view = gsl::span<double>(yVelocity, resolution);
+    const auto temp_field_view = gsl::span<double>(tempField, resolution);
+    const auto field_view = gsl::span<double>(field, resolution);
+
     if(xRes_static == -1)
         xRes_static = xRes;
 
@@ -92,10 +102,8 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
     {
         for (auto x = 1; x < xRes - 1; ++x)
         {
-            const Vector2 cur_cell(x, y);
-
-            const auto x_comp = xVelocity[index(cur_cell)];
-            const auto y_comp = yVelocity[index(cur_cell)];
+            const auto x_comp = x_velocity_view[index(x, y)];
+            const auto y_comp = y_velocity_view[index(x, y)];
 
             auto x_offset = x - x_comp * dt;
             auto y_offset = y - y_comp * dt;
@@ -103,9 +111,9 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
             x_offset = std::min(xRes - 2.0, std::max(1.0, x_offset));
             y_offset = std::min(yRes - 2.0, std::max(1.0, y_offset));
 
-            const auto new_value = sampleTrilinear(field, x_offset, y_offset);
+            const auto new_value = sampleTrilinear(field_view, x_offset, y_offset);
 
-            set_point(tempField, x, y, new_value);
+            set_point(temp_field_view, x, y, new_value);
         }
     }
 
@@ -115,6 +123,9 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
 void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
                   double* pressure, double* divergence)
 {
+    const auto resolution = xRes * yRes;
+    const auto pressure_view = gsl::span<double>(pressure, resolution);
+
     auto iteration = 0;
     auto error = 0.0;
 
@@ -124,23 +135,17 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
         {
             for (auto x = 1; x < xRes - 1; ++x) 
             {
-                const Vector2 cur_cell(
-                {
-                    static_cast<double>(x),
-                    static_cast<double>(y)
-                });
-
-                const auto current = pressure[index(x, y)];
+                const auto current = pressure_view[index(x, y)];
 
                 //Using five points as it is necessary to take the local value into account as well
                 const auto new_value = ( current +
-                                    pressure[index(x + 1, y)] +
-                                    pressure[index(x, y + 1)] +
-                                    pressure[index(x - 1, y)] +
-                                    pressure[index(x, y - 1)]
+                    pressure_view[index(x + 1, y)] +
+                    pressure_view[index(x, y + 1)] +
+                    pressure_view[index(x - 1, y)] +
+                    pressure_view[index(x, y - 1)]
                                   ) / 5.0f;
 
-                set_point(pressure, cur_cell, new_value);
+                set_point(pressure_view, x, y, new_value);
 
                 error += std::abs(current - new_value);
             }
@@ -156,14 +161,20 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
 void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
                        double* xVelocity, double* yVelocity)
 {
+    const auto resolution = xRes * yRes;
+
+    const auto x_velocity_view = gsl::span<double>(xVelocity, resolution);
+    const auto y_velocity_view = gsl::span<double>(yVelocity, resolution);
+    const auto pressure_view = gsl::span<const double>(pressure, resolution);
+
     for (auto y = 1; y < yRes - 1; ++y)
     {
         for (auto x = 1; x < xRes - 1; ++x) 
         {
-            const auto presx2_y = pressure[index(x + 1,y)];
-            const auto presxy2 = pressure[index(x,y + 1)];
-            const auto presx1_y = pressure[index(x - 1,y)];
-            const auto presxy1 = pressure[index(x,y - 1)];
+            const auto presx2_y = pressure_view[index(x + 1,y)];
+            const auto presxy2 = pressure_view[index(x,y + 1)];
+            const auto presx1_y = pressure_view[index(x - 1,y)];
+            const auto presxy1 = pressure_view[index(x,y - 1)];
 
             const auto presx = presx2_y-presx1_y;
             const auto presy = presxy2-presxy1;
@@ -171,8 +182,8 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
             const auto deltax_vel = dt / 1.0f * (1.0f / h) * presx;
             const auto deltay_vel = dt / 1.0f * (1.0f / h) * presy;
 
-            xVelocity[index(x,y)] = xVelocity[index(x,y)] - deltax_vel;
-            yVelocity[index(x,y)] = yVelocity[index(x,y)] - deltay_vel;
+            x_velocity_view[index(x,y)] = x_velocity_view[index(x,y)] - deltax_vel;
+            y_velocity_view[index(x,y)] = y_velocity_view[index(x,y)] - deltay_vel;
         }
     }
 }
