@@ -118,7 +118,7 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
 
     if(xRes_static == -1)
         xRes_static = xRes;
-
+#pragma omp parallel for
     for (auto y = 0; y < yRes - 0; ++y)
     {
         for (auto x = 0; x < xRes - 0; ++x)
@@ -166,12 +166,11 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
         const auto write_view = gsl::span<double>(it % 2 == 0
             ? pressure_view
             : pressure_temp_view);
-
+#pragma omp parallel for reduction(+:error_sq)
         for (auto y = 1; y < yRes - 1; ++y) 
         {
             for (auto x = 1; x < xRes - 1; ++x) 
             {
-                skip_source(x,y)
                 //Using five points as it is necessary to take the local value into account as well
                 const auto new_value = (1.0 / resolution * divergence_view[index(x,y)] +
                                         read_view[index(x + 1, y)] +
@@ -207,12 +206,13 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
     const auto y_velocity_view = create_view(yVelocity, resolution);
     const auto pressure_view = create_view(pressure, resolution);
 
+#pragma omp parallel for
     for (auto y = 1; y < yRes - 1; ++y)
     {
         for (auto x = 1; x < xRes - 1; ++x)
         {
-            const auto right = pressure_view[index(x + 1, y)];
             skip_source(x,y)
+            const auto right = pressure_view[index(x + 1, y)];
             const auto mid = pressure_view[index(x, y)];
             const auto left = pressure_view[index(x - 1, y)];
             const auto top = pressure_view[index(x, y - 1)];
