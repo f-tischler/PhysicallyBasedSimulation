@@ -24,6 +24,9 @@
 #include <cmath>
 #include "gsl/gsl"
 
+#define skip_source(x, y) if(x >= 90 && x < 110 && y >= 20 && y < 30) continue;
+#define copy_source(x, y, src, dst) if(x >= 90 && x < 110 && y >= 20 && y < 30) dst[index(x,y)]=src[index(x,y)];
+
 
 static int xRes_static = -1;
 constexpr double h=3.0f;
@@ -122,6 +125,8 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
     {
         for (auto x = 1; x < xRes - 1; ++x)
         {
+            copy_source(x,y, field_view,temp_field_view)
+
             const auto velocity_x = x_velocity_view[index(x, y)];
             const auto velocity_y = y_velocity_view[index(x, y)];
 
@@ -168,8 +173,9 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
         {
             for (auto x = 1; x < xRes - 1; ++x) 
             {
+                skip_source(x,y)
                 //Using five points as it is necessary to take the local value into account as well
-                const auto new_value = (h * h * divergence_view[index(x,y)] +
+                const auto new_value = ( h2 *   divergence_view[index(x,y)] +
                                         read_view[index(x + 1, y)] +
                                         read_view[index(x - 1, y)] +
                                         read_view[index(x, y + 1)] +
@@ -200,6 +206,7 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
     {
         for (auto x = 1; x < xRes - 1; ++x) 
         {
+            skip_source(x,y)
             const auto mid = pressure_view[index(x, y)];
             const auto left = pressure_view[index(x - 1, y)];
             const auto top = pressure_view[index(x, y - 1)];
