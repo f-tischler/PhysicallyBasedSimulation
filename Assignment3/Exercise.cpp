@@ -17,37 +17,15 @@
 *
 *******************************************************************/
 
-#include "Vec2.h"
-#include <math.h>
-#include <algorithm>
 #include <cmath>
+#include <algorithm>
 #include "gsl/gsl"
 
 static int xRes_static = -1;
 
-template<typename T>
-gsl::span<T> create_view(T*& first, const size_t size)
-{
-    const auto span = gsl::span<T>(first, size);
-
-    first = nullptr;
-
-    return span;
-}
-
-int index(Vector2 pos)
-{
-    return static_cast<int>(std::floor(pos.y() * xRes_static + pos.x()));
-}
-
 int index(const int x, const int y)
 {
     return y * xRes_static + x;
-}
-
-void set_point(double* field, const Vector2 pos, const double value)
-{
-    field[index(pos)] = value;
 }
 
 void set_point(double *field, const int x, const int y, const double value)
@@ -55,10 +33,6 @@ void set_point(double *field, const int x, const int y, const double value)
     field[index(x, y)] = value;
 }
 
-void set_point(const gsl::span<double> field, const int x, const int y, const double value)
-{
-    field[index(x, y)] = value;
-}
 
 double mix(const double x, const double y, const double alpha)
 {
@@ -71,7 +45,7 @@ double fastModf(double x, double &part)
     return x - part;
 }
 
-double sampleBilinear(const gsl::span<double> field,
+double sampleBilinear(double* field,
                       const double x,
                       const double y,
                       const int width,
@@ -104,13 +78,6 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
     double *xVelocity, double *yVelocity,
     double *field, double* tempField)
 {
-    const auto resolution = xRes * yRes;
-
-    const auto x_velocity_view = create_view(xVelocity, resolution);
-    const auto y_velocity_view = create_view(yVelocity, resolution);
-    const auto temp_field_view = create_view(tempField, resolution);
-    const auto field_view = create_view(field, resolution);
-
     if(xRes_static == -1)
         xRes_static = xRes;
 
@@ -119,8 +86,8 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
     {
         for (auto x = 0; x < xRes - 0; ++x)
         {
-            const auto velocity_x = x_velocity_view[index(x, y)];
-            const auto velocity_y = y_velocity_view[index(x, y)];
+            const auto velocity_x = xVelocity[index(x, y)];
+            const auto velocity_y = yVelocity[index(x, y)];
 
             auto prev_x = x - velocity_x * dt * xRes;
             auto prev_y = y - velocity_y * dt * yRes;
@@ -128,9 +95,9 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
             prev_x = std::max(0.0, std::min(xRes - 1.0, prev_x));
             prev_y = std::max(0.0, std::min(yRes - 1.0, prev_y));
 
-            const auto new_value = sampleBilinear(field_view, prev_x, prev_y, xRes, yRes);
+            const auto new_value = sampleBilinear(field, prev_x, prev_y, xRes, yRes);
 
-            set_point(temp_field_view, x, y, new_value);
+            set_point(tempField, x, y, new_value);
         }
     }
 }
@@ -139,78 +106,55 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
                   double* pressure, double* divergence)
 {
     const auto resolution = xRes * yRes;
-    const auto pressure_view = create_view(pressure, resolution);
-    const auto divergence_view = create_view(divergence, resolution);
-
-    std::vector<double> pressure_temp_view(pressure_view.begin(), pressure_view.end());
 
     const auto accuracy_sq = accuracy * accuracy;
 
     auto it = 0;
     auto error_sq = accuracy * accuracy;
 
-    for (; it < iterations && error_sq >= accuracy_sq; ++it)
+    for (; it < iterations && error_sq >= accuracy_sq; it+=2)
     {
         error_sq = 0.0;
-
-        const auto read_view = gsl::span<double>(it % 2 == 0
-            ? pressure_temp_view
-            : pressure_view);
-
-        const auto write_view = gsl::span<double>(it % 2 == 0
-            ? pressure_view
-            : pressure_temp_view);
-
-        #pragma omp parallel for reduction(+:error_sq)
-        for (auto y = 1; y < yRes - 1; ++y) 
+#pragma omp parallel for reduction(+:error_sq)
+        for (auto y = 1; y < yRes - 1; ++y)
         {
-            for (auto x = 1; x < xRes - 1; ++x) 
+            for (auto x = 1; x < xRes - 1; ++x)
             {
-                //Using five points as it is necessary to take the local value into account as well
-                const auto new_value = (1.0 / resolution * divergence_view[index(x,y)] +
-                                        read_view[index(x + 1, y)] +
-                                        read_view[index(x - 1, y)] +
-                                        read_view[index(x, y + 1)] +
-                                        read_view[index(x, y - 1)]) / 4.0;
+                const auto new_value = (1.0 / resolution * divergence[index(x,y)] +
+                        pressure[index(x + 1, y)] +
+                        pressure[index(x - 1, y)] +
+                        pressure[index(x, y + 1)] +
+                        pressure[index(x, y - 1)]) / 4.0;
 
-                set_point(write_view, x, y, new_value);
 
-                const auto r = 1.0 / (xRes * yRes) * divergence_view[index(x, y)]
-                    + read_view[index(x, y - 1)]
-                    + read_view[index(x - 1, y)]
-                    - 4 * read_view[index(x, y)]
-                    + read_view[index(x, y + 1)]
-                    + read_view[index(x + 1, y)];
+                const auto r = 1.0 / (xRes * yRes) * divergence[index(x, y)]
+                               + pressure[index(x, y - 1)]
+                               + pressure[index(x - 1, y)]
+                               - 4 * pressure[index(x, y)]
+                               + pressure[index(x, y + 1)]
+                               + pressure[index(x + 1, y)];
+
+                set_point(pressure, x, y, new_value);
 
                 error_sq += r * r;
             }
         }
     }
 
-    if (it % 2 != 0) return;
-    
-    std::copy(pressure_temp_view.begin(), pressure_temp_view.end(), pressure_view.begin());
 }
 
 void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
                        double* xVelocity, double* yVelocity)
 {
-    const auto resolution = xRes * yRes;
-
-    const auto x_velocity_view = create_view(xVelocity, resolution);
-    const auto y_velocity_view = create_view(yVelocity, resolution);
-    const auto pressure_view = create_view(pressure, resolution);
-
     #pragma omp parallel for
     for (auto y = 1; y < yRes - 1; ++y)
     {
         for (auto x = 1; x < xRes - 1; ++x)
         {
-            const auto right = pressure_view[index(x + 1, y)];
-            const auto mid = pressure_view[index(x, y)];
-            const auto left = pressure_view[index(x - 1, y)];
-            const auto top = pressure_view[index(x, y - 1)];
-            const auto bottom = pressure_view[index(x, y + 1)];
+            const auto right = pressure[index(x + 1, y)];
+            const auto left = pressure[index(x - 1, y)];
+            const auto top = pressure[index(x, y - 1)];
+            const auto bottom = pressure[index(x, y + 1)];
 
             const auto x_diff = right - left;
             const auto y_diff = bottom - top;
@@ -218,8 +162,8 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
             const auto deltax_vel = xRes * dt * 0.5 * x_diff;
             const auto deltay_vel = yRes * dt * 0.5 * y_diff;
 
-            x_velocity_view[index(x,y)] -= deltax_vel;
-            y_velocity_view[index(x,y)] -= deltay_vel;
+            xVelocity[index(x,y)] -= deltax_vel;
+            yVelocity[index(x,y)] -= deltay_vel;
         }
     }
 

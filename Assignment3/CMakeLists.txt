@@ -21,8 +21,6 @@ add_executable(FluidSim ${SOURCE_FILES})
 
 target_include_directories(FluidSim PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-#target_include_directories(FluidSim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
 if(WIN32)
 	find_path(FREEGLUT_INCLUDE_DIR gl/freeglut.h)
 	find_library(FREEGLUT_LIBRARY freeglut)
