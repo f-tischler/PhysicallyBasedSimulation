@@ -118,8 +118,8 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
             const auto prev_x = x - velocity_x * dt;
             const auto prev_y = y - velocity_y * dt;
 
-            Ensures(prev_x > 0 && prev_x < xRes - 1);
-            Ensures(prev_y > 0 && prev_y < yRes - 1);
+            //Ensures(prev_x > 0 && prev_x < xRes - 1);
+            //Ensures(prev_y > 0 && prev_y < yRes - 1);
 
             const auto new_value = sampleBilinear(field_view, prev_x, prev_y);
 
