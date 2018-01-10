@@ -24,77 +24,81 @@
 #include <math.h>
 #include <algorithm>
 #include <cmath>
+#include <array>
 
 
 static int xRes_static = -1;
 
 int index(Vector2 pos)
 {
-    return pos.y() * xRes_static + pos.x();
+    return static_cast<int>(std::floor( pos.y() * xRes_static + pos.x()));
 }
 
-void set_point(double* field, Vector2 pos,double value)
+int index(const int x, const int y)
 {
-    int i=index(pos);
-    field[i] = value;
+    return y * xRes_static + x;
 }
 
-double mix(double x, double y, double alpha)
+void set_point(double* field, const Vector2 pos, const double value)
 {
-    return x * (1.0f - alpha) + (y * alpha);
+    field[index(pos)] = value;
+}
+
+double mix(const double x, const double y, const double alpha)
+{
+    return x * (1.0f - alpha) + y * alpha;
 }
 
 double fastModf(double x, double &part)
 {
-    part=floor(x);
+    part = floor(x);
     return x - part;
 }
 
 double sampleTrilinear(double *field, double x, double y) {
-    double xIntPart, yIntPart;
+    
+    double x_int_part = 0;
+    double y_int_part = 0;
 
-    double xFloatPart = fastModf(x,xIntPart);
-    double yFloatPart = fastModf(y,yIntPart);
+    const auto x_float_part = fastModf(x, x_int_part);
+    const auto y_float_part = fastModf(y, y_int_part);
 
-    double tmp1{0.0f}, tmp2{0.0f}, tmp3{0.0f}, tmp4{0.0f},
-            tmp12{0.0f},tmp34{0.0f};
+    const auto tmp1 = field[index({ x_int_part, y_int_part})];
+    const auto tmp2 = field[index({ x_int_part + 1, y_int_part})];
+    const auto tmp3 = field[index({ x_int_part, y_int_part + 1 })];
+    const auto tmp4 = field[index({ x_int_part + 1, y_int_part + 1})];
 
-    tmp1 = field[ index( {(int)xIntPart, (int)yIntPart} ) ];
-    tmp2 = field[ index( {(int)xIntPart + 1, (int)yIntPart} ) ];
-    tmp3 = field[ index( {(int)xIntPart, (int)yIntPart + 1} ) ];
-    tmp4 = field[ index( {(int)xIntPart + 1, (int)yIntPart + 1} ) ];
+    const auto tmp12 = mix(tmp1, tmp2, x_float_part);
+    const auto tmp34 = mix(tmp3, tmp4, x_float_part);
 
-
-    tmp12 = mix(tmp1, tmp2, xFloatPart);
-    tmp34 = mix(tmp3, tmp4, xFloatPart);
-
-    return mix(tmp12, tmp34, yFloatPart);
+    return mix(tmp12, tmp34, y_float_part);
 }
 
 void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
                             double *xVelocity, double *yVelocity,
                             double *field, double* tempField)
 {
-    if(xRes_static==-1)
-        xRes_static=xRes;
+    if(xRes_static == -1)
+        xRes_static = xRes;
 
-    for (int y = 1; y < yRes - 1; ++y) {
-        for (int x = 1; x < xRes - 1; ++x) {
-            Vector2 cur_cell(x, y);
-            double xComp = xVelocity[index(cur_cell)];
-            double yComp = yVelocity[index(cur_cell)];
+    for (auto y = 1; y < yRes - 1; ++y) 
+    {
+        for (auto x = 1; x < xRes - 1; ++x)
+        {
+            const Vector2 cur_cell(x, y);
 
-            double xOffset = x - (xComp * dt);
-            double yOffset = y - (yComp * dt);
+            const auto x_comp = xVelocity[index(cur_cell)];
+            const auto y_comp = yVelocity[index(cur_cell)];
 
-            xOffset = std::min((double) (xRes - 2),
-                               std::max((double) 1.0f, xOffset));
-            yOffset = std::min((double) (yRes - 2),
-                               std::max((double) 1.0f, yOffset));
+            auto x_offset = x - x_comp * dt;
+            auto y_offset = y - y_comp * dt;
 
-            double newValue = sampleTrilinear(field, xOffset, yOffset);
+            x_offset = std::min(xRes - 2.0, std::max(1.0, x_offset));
+            y_offset = std::min(yRes - 2.0, std::max(1.0, y_offset));
 
-            set_point(tempField, cur_cell, newValue);
+            const auto new_value = sampleTrilinear(field, x_offset, y_offset);
+
+            set_point(tempField, cur_cell, new_value);
         }
     }
 
@@ -104,48 +108,68 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
 void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
                   double* pressure, double* divergence)
 {
-    double *tempPressure=(double*)malloc(sizeof(double)*xRes*yRes);
+    auto temp_pressure = std::vector<double>(xRes * yRes, 0);
 
-    for (int y = 0; y < yRes*xRes; ++y)
-        tempPressure[y]=0.0f;
+    while (true)
+    {
+        auto error = 0.0;
 
-    while (true) {
-        double error=0;
-        for (int y = 0; y < yRes; ++y) {
-            for (int x = 0; x < xRes; ++x) {
-                Vector2 cur_cell({x,y});
-                double current = pressure[index(cur_cell)];
+        for (auto y = 1; y < yRes - 1; ++y) 
+        {
+            for (auto x = 1; x < xRes - 1; ++x) 
+            {
+                const Vector2 cur_cell(
+                {
+                    static_cast<double>(x),
+                    static_cast<double>(y)
+                });
+
+                const auto current = pressure[index(x, y)];
+
                 //Using five points as it is necessary to take the local value into account as well
-                double newValue = ( current +
-                                    pressure[index({x + 1, y})] +
-                                    pressure[index({x, y + 1})] +
-                                    pressure[index({x - 1, y})] +
-                                    pressure[index({x, y - 1})]
+                const auto new_value = ( current +
+                                    pressure[index(x + 1, y)] +
+                                    pressure[index(x, y + 1)] +
+                                    pressure[index(x - 1, y)] +
+                                    pressure[index(x, y - 1)]
                                   ) / 5.0f;
 
-                set_point(tempPressure,cur_cell,newValue);
-                error += current - newValue > 0 ? current - newValue : newValue - current;
+                set_point(temp_pressure.data(), cur_cell, new_value);
+
+                error += std::abs(current - new_value);
             }
         }
+
         if(error < accuracy)
             break;
-        for (int y = 0; y < yRes; ++y) {
-            for (int x = 0; x < xRes; ++x) {
-                Vector2 cur_cell({x,y});
-                double current = pressure[index(cur_cell)];
+
+        for (auto y = 1; y < yRes - 1; ++y)
+        {
+            for (auto x = 1; x < xRes - 1; ++x)
+            {
+                const Vector2 cur_cell(
+                {
+                    static_cast<double>(x),
+                    static_cast<double>(y)
+                });
+
+                const auto current = pressure[index(cur_cell)];
+
                 //Using five points as it is necessary to take the local value into account as well
-                double newValue = ( current +
-                                    tempPressure[index({x + 1, y})] +
-                                    tempPressure[index({x, y + 1})] +
-                                    tempPressure[index({x - 1, y})] +
-                                    tempPressure[index({x, y - 1})] -
-                                    divergence[index({x,y})]
+                const auto new_value = ( current +
+                                    temp_pressure[index(x + 1, y)] +
+                                    temp_pressure[index(x, y + 1)] +
+                                    temp_pressure[index(x - 1, y)] +
+                                    temp_pressure[index(x, y - 1)] -
+                                    divergence[index(x, y)]
                                   ) / 5.0f;
 
-                set_point(pressure,cur_cell,newValue);
-                error += current - newValue > 0 ? current - newValue : newValue - current;
+                set_point(pressure, cur_cell, new_value);
+
+                error += std::abs(current - new_value);
             }
         }
+
         if(error < accuracy)
             break;
     }
@@ -154,64 +178,80 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
 void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
                        double* xVelocity, double* yVelocity)
 {
+    const auto resolution = yRes * xRes;
 
-    double* xVelocityTemp = new double[yRes*xRes];
-    double* yVelocityTemp = new double[yRes*xRes];
-    for (int y = 0; y < yRes*xRes; ++y) {
-        xVelocityTemp[y] = xVelocity[y] * 0.9f;
-        yVelocityTemp[y] = yVelocity[y] * 0.9f;
+    auto x_velocity_temp = std::vector<double>(resolution);
+    auto y_velocity_temp = std::vector<double>(resolution);
+
+    for (auto y = 0; y < resolution; ++y) 
+    {
+        x_velocity_temp[y] = xVelocity[y] * 0.9f;
+        y_velocity_temp[y] = yVelocity[y] * 0.9f;
     }
 
-    for (int y = 0; y < yRes; ++y) {
-        for (int x = 0; x < xRes; ++x) {
-            Vector2 cur_cell(x, y);
+    for (auto y = 0; y < yRes; ++y) 
+    {
+        for (auto x = 0; x < xRes; ++x) 
+        {
+            const Vector2 cur_cell(x, y);
 
-            double xComp = xVelocity[index(cur_cell)];
-            double yComp = yVelocity[index(cur_cell)];
+            const auto x_comp = xVelocity[index(cur_cell)];
+            const auto y_comp = yVelocity[index(cur_cell)];
 
-            double xOffset = x + (xComp * dt);
-            double yOffset = y + (yComp * dt);
+            auto x_offset = x + x_comp * dt;
+            auto y_offset = y + y_comp * dt;
 
-            xOffset = std::min((double) (xRes - 2),
-                               std::max((double) 1.0f, xOffset));
-            yOffset = std::min((double) (yRes - 2),
-                               std::max((double) 1.0f, yOffset));
+            x_offset = std::min(xRes - 2.0, std::max(1.0, x_offset));
+            y_offset = std::min(yRes - 2.0, std::max(1.0, y_offset));
 
-            double xIntPart, yIntPart;
+            double x_int_part, y_int_part;
 
-            double xFloatPart = fastModf(xOffset,xIntPart);
-            double yFloatPart = fastModf(yOffset,yIntPart);
+            const auto x_float_part = fastModf(x_offset,x_int_part);
+            const auto y_float_part = fastModf(y_offset,y_int_part);
 
-            double xInverseFloatPart = 1 - xFloatPart;
-            double yInverseFloatPart = 1 - yFloatPart;
+            const auto x_inverse_float_part = 1 - x_float_part;
+            const auto y_inverse_float_part = 1 - y_float_part;
 
-            int *indexes = new int[4];
-            indexes[0] = index( {(int)xIntPart, (int)yIntPart} );
-            indexes[1] = index( {(int)xIntPart, (int)yIntPart + 1} );
-            indexes[2] = index( {(int)xIntPart + 1, (int)yIntPart} );
-            indexes[3] = index( {(int)xIntPart + 1, (int)yIntPart + 1} );
+            std::array<int, 4> indexes =
+            {
+                index({ x_int_part, y_int_part }),
+                index({ x_int_part, y_int_part + 1 }),
+                index({ x_int_part + 1, y_int_part }),
+                index({ x_int_part + 1, y_int_part + 1 })
+            };
 
-            double *xValues = new double[4];
-            double *yValues = new double[4];
-            xValues[0] = ( xComp * ((xInverseFloatPart + yInverseFloatPart) / 2) );
-            yValues[0] = ( yComp * ((xInverseFloatPart + yInverseFloatPart) / 2) );
-            xValues[1] = ( xComp * ((xInverseFloatPart + yFloatPart) / 2) );
-            yValues[1] = ( yComp * ((xInverseFloatPart + yFloatPart) / 2) );
-            xValues[2] = ( xComp * ((xFloatPart + yInverseFloatPart) / 2) );
-            yValues[2] = ( yComp * ((xFloatPart + yInverseFloatPart) / 2) );
-            xValues[3] = ( xComp * ((xFloatPart + yFloatPart) / 2) );
-            yValues[3] = ( yComp * ((xFloatPart + yFloatPart) / 2) );
+            std::array<double, 4> x_values = 
+            {
+                x_comp * ((x_inverse_float_part + y_inverse_float_part) / 2),
+                x_comp * ((x_inverse_float_part + y_float_part) / 2),
+                x_comp * ((x_float_part + y_inverse_float_part) / 2),
+                x_comp * ((x_float_part + y_float_part) / 2)
+            };
 
-            for (int i = 0; i < 4; ++i) {
-                xVelocityTemp[ indexes[i] ] =
-                        ( xVelocityTemp[ indexes[i] ] + xValues[i] ) / 2;
-                yVelocityTemp[ indexes[i] ] =
-                        ( yVelocityTemp[ indexes[i] ] + yValues[i] ) / 2;
+            std::array<double, 4> y_values =
+            {
+                y_comp * ((x_inverse_float_part + y_inverse_float_part) / 2),
+                y_comp * ((x_inverse_float_part + y_float_part) / 2),
+                y_comp * ((x_float_part + y_inverse_float_part) / 2),
+                y_comp * ((x_float_part + y_float_part) / 2)
+            };
+
+            for (auto i = 0; i < 4; ++i) 
+            {
+                x_velocity_temp[ indexes[i] ] =
+                        ( x_velocity_temp[ indexes[i] ] + x_values[i] ) / 2;
+
+                y_velocity_temp[ indexes[i] ] =
+                        ( y_velocity_temp[ indexes[i] ] + y_values[i] ) / 2;
             }
 
 
         }
     }
-    xVelocity=xVelocityTemp;
-    yVelocity=yVelocityTemp;
+
+    std::copy(x_velocity_temp.begin(), x_velocity_temp.end(), xVelocity);
+    std::copy(y_velocity_temp.begin(), y_velocity_temp.end(), yVelocity);
+
+    //xVelocity=x_velocity_temp;
+    //yVelocity=y_velocity_temp;
 }
