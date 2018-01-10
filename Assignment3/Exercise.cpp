@@ -81,8 +81,6 @@ double sampleBilinear(const gsl::span<double> field,
                       const int width,
                       const int height)
 {
-    const auto border_value = 0.0;
-
     double x_int_part = 0;
     double y_int_part = 0;
 
@@ -92,20 +90,13 @@ double sampleBilinear(const gsl::span<double> field,
     const auto index_x = gsl::narrow<int>(x_int_part);
     const auto index_y = gsl::narrow<int>(y_int_part);
 
-    const auto tmp1 = 
-        field[index(index_x, index_y)];
+    const auto index_neighbour_x = std::min(width - 1,  index_x + 1);
+    const auto index_neighbour_y = std::min(height - 1, index_y + 1);
 
-    const auto tmp2 = index_x == width - 1
-        ? border_value
-        : field[index(index_x + 1, index_y)];
-
-    const auto tmp3 = index_y == height - 1
-        ? border_value
-        : field[index(index_x, index_y + 1)];
-
-    const auto tmp4 = index_x == width - 1 || index_y == height - 1
-        ? border_value
-        : field[index(index_x + 1, index_y + 1)];
+    const auto tmp1 = field[index(index_x, index_y)];
+    const auto tmp2 = field[index(index_neighbour_x, index_y)];
+    const auto tmp3 = field[index(index_x, index_neighbour_y)];
+    const auto tmp4 = field[index(index_neighbour_x, index_neighbour_y)];
         
     const auto tmp12 = mix(tmp1, tmp2, x_float_part);
     const auto tmp34 = mix(tmp3, tmp4, x_float_part);
@@ -134,23 +125,18 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
             const auto velocity_x = x_velocity_view[index(x, y)];
             const auto velocity_y = y_velocity_view[index(x, y)];
 
-            const auto prev_x = x - velocity_x * dt;
-            const auto prev_y = y - velocity_y * dt;
+            auto prev_x = x - velocity_x * dt;
+            auto prev_y = y - velocity_y * dt;
 
-            if (prev_x < 0 || prev_x >= xRes ||
-                prev_y < 0 || prev_y >= yRes)
-            {
-                set_point(temp_field_view, x, y, 0);
-                continue;
-            }
-
-
-            //Ensures(prev_x > 0 && prev_x < xRes - 1);
-            //Ensures(prev_y > 0 && prev_y < yRes - 1);
+            prev_x = std::max(0.0, std::min(xRes - 1.0, prev_x));
+            prev_y = std::max(0.0, std::min(yRes - 1.0, prev_y));
 
             const auto new_value = sampleBilinear(field_view, prev_x, prev_y, xRes, yRes);
-
             set_point(temp_field_view, x, y, new_value);
+
+            //set_point(temp_field_view, x, y, field_view[index(
+            //    static_cast<int>(prev_x), 
+            //    static_cast<int>(prev_y))]);
         }
     }
 }
@@ -163,37 +149,42 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
     const auto pressure_view = create_view(pressure, resolution);
     const auto divergence_view = create_view(divergence, resolution);
 
-    auto iteration = 0;
-    auto error = 0.0;
+    std::vector<double> pressure_temp_view(pressure_view.begin(), pressure_view.end());
 
-    while (true)
+    auto error = accuracy;
+    auto it = 0;
+
+    for (; it < iterations /*&& error>= accuracy*/ ; ++it)
     {
+        const auto read_view = gsl::span<double>(it % 2 == 0
+            ? pressure_temp_view
+            : pressure_view);
+
+        const auto write_view = gsl::span<double>(it % 2 == 0
+            ? pressure_view
+            : pressure_temp_view);
+
         for (auto y = 1; y < yRes - 1; ++y) 
         {
             for (auto x = 1; x < xRes - 1; ++x) 
             {
-                const auto current = pressure_view[index(x, y)];
-
                 //Using five points as it is necessary to take the local value into account as well
-                double new_value = ( divergence_view[index(x,y)] +
-                                    ( pressure_view[index(x + 1, y)] +
-                                      pressure_view[index(x, y + 1)] +
-                                      pressure_view[index(x - 1, y)] +
-                                      pressure_view[index(x, y - 1)]
-                                    )
-                                  ) / 4.0f;
+                const auto new_value = (h * h * divergence_view[index(x,y)] +
+                                        read_view[index(x + 1, y)] +
+                                        read_view[index(x - 1, y)] +
+                                        read_view[index(x, y + 1)] +
+                                        read_view[index(x, y - 1)]) / 4.0;
 
-                set_point(pressure_view, x, y, new_value);
+                set_point(write_view, x, y, new_value);
 
-                error += std::abs(current - new_value);
+                error += std::abs(new_value - read_view[index(x, y)]);
             }
         }
-
-        ++iteration;
-        
-        if (error < accuracy || iteration >= iterations)
-            break;
     }
+
+    if (it % 2 != 0) return;
+    
+    std::copy(pressure_temp_view.begin(), pressure_temp_view.end(), pressure_view.begin());
 }
 
 void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
@@ -209,19 +200,18 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
     {
         for (auto x = 1; x < xRes - 1; ++x) 
         {
-            const auto presx2_y = pressure_view[index(x + 1,y)];
-            const auto presxy2 = pressure_view[index(x,y + 1)];
-            const auto presx1_y = pressure_view[index(x - 1,y)];
-            const auto presxy1 = pressure_view[index(x,y - 1)];
+            const auto mid = pressure_view[index(x, y)];
+            const auto left = pressure_view[index(x - 1, y)];
+            const auto top = pressure_view[index(x, y - 1)];
 
-            const auto presx = presx2_y-presx1_y;
-            const auto presy = presxy2-presxy1;
+            const auto x_diff = mid - left;
+            const auto y_diff = mid - top;
 
-            const auto deltax_vel = dt / 1.0f * (1.0f / h) * presx;
-            const auto deltay_vel = dt / 1.0f * (1.0f / h) * presy;
+            const auto deltax_vel = dt / 1.0f * (1.0f / h) * x_diff;
+            const auto deltay_vel = dt / 1.0f * (1.0f / h) * y_diff;
 
-            x_velocity_view[index(x,y)] = x_velocity_view[index(x,y)] - deltax_vel;
-            y_velocity_view[index(x,y)] = y_velocity_view[index(x,y)] - deltay_vel;
+            x_velocity_view[index(x,y)] -= deltax_vel;
+            y_velocity_view[index(x,y)] -= deltay_vel;
         }
     }
 
