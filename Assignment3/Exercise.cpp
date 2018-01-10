@@ -28,10 +28,12 @@
 
 
 static int xRes_static = -1;
+constexpr double h=3.0f;
+constexpr double h2=9.0f;
 
 int index(Vector2 pos)
 {
-    return static_cast<int>(std::floor( pos.y() * xRes_static + pos.x()));
+    return static_cast<int>(std::floor(pos.y() * xRes_static + pos.x()));
 }
 
 int index(const int x, const int y)
@@ -42,6 +44,11 @@ int index(const int x, const int y)
 void set_point(double* field, const Vector2 pos, const double value)
 {
     field[index(pos)] = value;
+}
+
+void set_point(double *field, const int x, const int y, const double value)
+{
+    field[index(x, y)] = value;
 }
 
 double mix(const double x, const double y, const double alpha)
@@ -98,7 +105,7 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
 
             const auto new_value = sampleTrilinear(field, x_offset, y_offset);
 
-            set_point(tempField, cur_cell, new_value);
+            set_point(tempField, x, y, new_value);
         }
     }
 
@@ -108,12 +115,11 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
 void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
                   double* pressure, double* divergence)
 {
-    auto temp_pressure = std::vector<double>(xRes * yRes, 0);
+    auto iteration = 0;
+    auto error = 0.0;
 
     while (true)
     {
-        auto error = 0.0;
-
         for (auto y = 1; y < yRes - 1; ++y) 
         {
             for (auto x = 1; x < xRes - 1; ++x) 
@@ -134,43 +140,15 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
                                     pressure[index(x, y - 1)]
                                   ) / 5.0f;
 
-                set_point(temp_pressure.data(), cur_cell, new_value);
-
-                error += std::abs(current - new_value);
-            }
-        }
-
-        if(error < accuracy)
-            break;
-
-        for (auto y = 1; y < yRes - 1; ++y)
-        {
-            for (auto x = 1; x < xRes - 1; ++x)
-            {
-                const Vector2 cur_cell(
-                {
-                    static_cast<double>(x),
-                    static_cast<double>(y)
-                });
-
-                const auto current = pressure[index(cur_cell)];
-
-                //Using five points as it is necessary to take the local value into account as well
-                const auto new_value = ( current +
-                                    temp_pressure[index(x + 1, y)] +
-                                    temp_pressure[index(x, y + 1)] +
-                                    temp_pressure[index(x - 1, y)] +
-                                    temp_pressure[index(x, y - 1)] -
-                                    divergence[index(x, y)]
-                                  ) / 5.0f;
-
                 set_point(pressure, cur_cell, new_value);
 
                 error += std::abs(current - new_value);
             }
         }
 
-        if(error < accuracy)
+        ++iteration;
+        
+        if (error < accuracy || iteration >= iterations)
             break;
     }
 }
@@ -178,80 +156,23 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
 void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
                        double* xVelocity, double* yVelocity)
 {
-    const auto resolution = yRes * xRes;
-
-    auto x_velocity_temp = std::vector<double>(resolution);
-    auto y_velocity_temp = std::vector<double>(resolution);
-
-    for (auto y = 0; y < resolution; ++y) 
+    for (auto y = 1; y < yRes - 1; ++y)
     {
-        x_velocity_temp[y] = xVelocity[y] * 0.9f;
-        y_velocity_temp[y] = yVelocity[y] * 0.9f;
-    }
-
-    for (auto y = 0; y < yRes; ++y) 
-    {
-        for (auto x = 0; x < xRes; ++x) 
+        for (auto x = 1; x < xRes - 1; ++x) 
         {
-            const Vector2 cur_cell(x, y);
+            const auto presx2_y = pressure[index(x + 1,y)];
+            const auto presxy2 = pressure[index(x,y + 1)];
+            const auto presx1_y = pressure[index(x - 1,y)];
+            const auto presxy1 = pressure[index(x,y - 1)];
 
-            const auto x_comp = xVelocity[index(cur_cell)];
-            const auto y_comp = yVelocity[index(cur_cell)];
+            const auto presx = presx2_y-presx1_y;
+            const auto presy = presxy2-presxy1;
 
-            auto x_offset = x + x_comp * dt;
-            auto y_offset = y + y_comp * dt;
+            const auto deltax_vel = dt / 1.0f * (1.0f / h) * presx;
+            const auto deltay_vel = dt / 1.0f * (1.0f / h) * presy;
 
-            x_offset = std::min(xRes - 2.0, std::max(1.0, x_offset));
-            y_offset = std::min(yRes - 2.0, std::max(1.0, y_offset));
-
-            double x_int_part, y_int_part;
-
-            const auto x_float_part = fastModf(x_offset,x_int_part);
-            const auto y_float_part = fastModf(y_offset,y_int_part);
-
-            const auto x_inverse_float_part = 1 - x_float_part;
-            const auto y_inverse_float_part = 1 - y_float_part;
-
-            std::array<int, 4> indexes =
-            {
-                index({ x_int_part, y_int_part }),
-                index({ x_int_part, y_int_part + 1 }),
-                index({ x_int_part + 1, y_int_part }),
-                index({ x_int_part + 1, y_int_part + 1 })
-            };
-
-            std::array<double, 4> x_values = 
-            {
-                x_comp * ((x_inverse_float_part + y_inverse_float_part) / 2),
-                x_comp * ((x_inverse_float_part + y_float_part) / 2),
-                x_comp * ((x_float_part + y_inverse_float_part) / 2),
-                x_comp * ((x_float_part + y_float_part) / 2)
-            };
-
-            std::array<double, 4> y_values =
-            {
-                y_comp * ((x_inverse_float_part + y_inverse_float_part) / 2),
-                y_comp * ((x_inverse_float_part + y_float_part) / 2),
-                y_comp * ((x_float_part + y_inverse_float_part) / 2),
-                y_comp * ((x_float_part + y_float_part) / 2)
-            };
-
-            for (auto i = 0; i < 4; ++i) 
-            {
-                x_velocity_temp[ indexes[i] ] =
-                        ( x_velocity_temp[ indexes[i] ] + x_values[i] ) / 2;
-
-                y_velocity_temp[ indexes[i] ] =
-                        ( y_velocity_temp[ indexes[i] ] + y_values[i] ) / 2;
-            }
-
-
+            xVelocity[index(x,y)] = xVelocity[index(x,y)] - deltax_vel;
+            yVelocity[index(x,y)] = yVelocity[index(x,y)] - deltay_vel;
         }
     }
-
-    std::copy(x_velocity_temp.begin(), x_velocity_temp.end(), xVelocity);
-    std::copy(y_velocity_temp.begin(), y_velocity_temp.end(), yVelocity);
-
-    //xVelocity=x_velocity_temp;
-    //yVelocity=y_velocity_temp;
 }
