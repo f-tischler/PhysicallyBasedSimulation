@@ -29,8 +29,6 @@
 
 
 static int xRes_static = -1;
-constexpr double h=3.0f;
-constexpr double h2=9.0f;
 
 template<typename T>
 gsl::span<T> create_view(T*& first, const size_t size)
@@ -93,8 +91,8 @@ double sampleBilinear(const gsl::span<double> field,
     const auto index_x = gsl::narrow<int>(x_int_part);
     const auto index_y = gsl::narrow<int>(y_int_part);
 
-    const auto index_neighbour_x = std::min(width - 1,  index_x + 1);
-    const auto index_neighbour_y = std::min(height - 1, index_y + 1);
+    const auto index_neighbour_x = std::max(0, std::min(width - 1,  index_x + 1));
+    const auto index_neighbour_y = std::max(0, std::min(height - 1, index_y + 1));
 
     const auto tmp1 = field[index(index_x, index_y)];
     const auto tmp2 = field[index(index_neighbour_x, index_y)];
@@ -121,31 +119,27 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
     if(xRes_static == -1)
         xRes_static = xRes;
 
-    for (auto y = 1; y < yRes - 1; ++y) 
+    for (auto y = 0; y < yRes - 0; ++y)
     {
-        for (auto x = 1; x < xRes - 1; ++x)
+        for (auto x = 0; x < xRes - 0; ++x)
         {
             copy_source(x,y, field_view,temp_field_view)
 
             const auto velocity_x = x_velocity_view[index(x, y)];
             const auto velocity_y = y_velocity_view[index(x, y)];
 
-            auto prev_x = x - velocity_x * dt;
-            auto prev_y = y - velocity_y * dt;
+            auto prev_x = x - velocity_x * dt * xRes;
+            auto prev_y = y - velocity_y * dt * yRes;
 
             prev_x = std::max(0.0, std::min(xRes - 1.0, prev_x));
             prev_y = std::max(0.0, std::min(yRes - 1.0, prev_y));
 
             const auto new_value = sampleBilinear(field_view, prev_x, prev_y, xRes, yRes);
-            set_point(temp_field_view, x, y, new_value);
 
-            //set_point(temp_field_view, x, y, field_view[index(
-            //    static_cast<int>(prev_x), 
-            //    static_cast<int>(prev_y))]);
+            set_point(temp_field_view, x, y, new_value);
         }
     }
 }
-
 
 void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
                   double* pressure, double* divergence)
@@ -156,11 +150,15 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
 
     std::vector<double> pressure_temp_view(pressure_view.begin(), pressure_view.end());
 
-    auto error = accuracy;
-    auto it = 0;
+    const auto accuracy_sq = accuracy * accuracy;
 
-    for (; it < iterations /*&& error>= accuracy*/ ; ++it)
+    auto it = 0;
+    auto error_sq = accuracy * accuracy;
+
+    for (; it < iterations && error_sq >= accuracy_sq; ++it)
     {
+        error_sq = 0.0;
+
         const auto read_view = gsl::span<double>(it % 2 == 0
             ? pressure_temp_view
             : pressure_view);
@@ -175,7 +173,7 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
             {
                 skip_source(x,y)
                 //Using five points as it is necessary to take the local value into account as well
-                const auto new_value = ( h2 *   divergence_view[index(x,y)] +
+                const auto new_value = (1.0 / resolution * divergence_view[index(x,y)] +
                                         read_view[index(x + 1, y)] +
                                         read_view[index(x - 1, y)] +
                                         read_view[index(x, y + 1)] +
@@ -183,7 +181,14 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
 
                 set_point(write_view, x, y, new_value);
 
-                error += std::abs(new_value - read_view[index(x, y)]);
+                const auto r = 1.0 / (xRes * yRes) * divergence_view[index(x, y)]
+                    + read_view[index(x, y - 1)]
+                    + read_view[index(x - 1, y)]
+                    - 4 * read_view[index(x, y)]
+                    + read_view[index(x, y + 1)]
+                    + read_view[index(x + 1, y)];
+
+                error_sq += r * r;
             }
         }
     }
@@ -204,18 +209,20 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
 
     for (auto y = 1; y < yRes - 1; ++y)
     {
-        for (auto x = 1; x < xRes - 1; ++x) 
+        for (auto x = 1; x < xRes - 1; ++x)
         {
+            const auto right = pressure_view[index(x + 1, y)];
             skip_source(x,y)
             const auto mid = pressure_view[index(x, y)];
             const auto left = pressure_view[index(x - 1, y)];
             const auto top = pressure_view[index(x, y - 1)];
+            const auto bottom = pressure_view[index(x, y + 1)];
 
-            const auto x_diff = mid - left;
-            const auto y_diff = mid - top;
+            const auto x_diff = right - left;
+            const auto y_diff = bottom - top;
 
-            const auto deltax_vel = dt / 1.0f * (1.0f / h) * x_diff;
-            const auto deltay_vel = dt / 1.0f * (1.0f / h) * y_diff;
+            const auto deltax_vel = xRes * dt * 0.5 * x_diff;
+            const auto deltay_vel = yRes * dt * 0.5 * y_diff;
 
             x_velocity_view[index(x,y)] -= deltax_vel;
             y_velocity_view[index(x,y)] -= deltay_vel;

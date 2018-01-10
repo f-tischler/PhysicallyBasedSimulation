@@ -39,7 +39,7 @@ extern void CorrectVelocities(int xRes, int yRes, double dt, const double* press
 
 Fluid_2D::Fluid_2D(int _xRes, int _yRes) : xRes(_xRes), yRes(_yRes)
 {
-    dt = 0.1;             /* Time step */
+    dt = 1;             /* Time step */
     totalSteps = 0;      
     bndryCond = 0;        
     addVort = 0;
