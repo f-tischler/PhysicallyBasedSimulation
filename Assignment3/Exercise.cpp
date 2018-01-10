@@ -29,6 +29,16 @@ static int xRes_static = -1;
 constexpr double h=3.0f;
 constexpr double h2=9.0f;
 
+template<typename T>
+gsl::span<T> create_view(T*& first, const size_t size)
+{
+    const auto span = gsl::span<T>(first, size);
+
+    first = nullptr;
+
+    return span;
+}
+
 int index(Vector2 pos)
 {
     return static_cast<int>(std::floor(pos.y() * xRes_static + pos.x()));
@@ -90,15 +100,10 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
 {
     const auto resolution = xRes * yRes;
 
-    const auto x_velocity_view = gsl::span<double>(xVelocity, resolution);
-    const auto y_velocity_view = gsl::span<double>(yVelocity, resolution);
-    const auto temp_field_view = gsl::span<double>(tempField, resolution);
-    const auto field_view = gsl::span<double>(field, resolution);
-
-    xVelocity = nullptr;
-    yVelocity = nullptr;
-    tempField = nullptr;
-    field = nullptr;
+    const auto x_velocity_view = create_view(xVelocity, resolution);
+    const auto y_velocity_view = create_view(yVelocity, resolution);
+    const auto temp_field_view = create_view(tempField, resolution);
+    const auto field_view = create_view(field, resolution);
 
     if(xRes_static == -1)
         xRes_static = xRes;
@@ -107,16 +112,16 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
     {
         for (auto x = 1; x < xRes - 1; ++x)
         {
-            const auto x_comp = x_velocity_view[index(x, y)];
-            const auto y_comp = y_velocity_view[index(x, y)];
+            const auto velocity_x = x_velocity_view[index(x, y)];
+            const auto velocity_y = y_velocity_view[index(x, y)];
 
-            auto x_offset = x - x_comp * dt;
-            auto y_offset = y - y_comp * dt;
+            auto prev_x = gsl::narrow<int>(std::floor(x - velocity_x * dt));
+            auto prev_y = gsl::narrow<int>(std::floor(y - velocity_y * dt));
 
-            x_offset = std::min(xRes - 2.0, std::max(1.0, x_offset));
-            y_offset = std::min(yRes - 2.0, std::max(1.0, y_offset));
+            Ensures(prev_x > 0 && prev_x < xRes - 1);
+            Ensures(prev_y > 0 && prev_y < yRes - 1);
 
-            const auto new_value = sampleTrilinear(field_view, x_offset, y_offset);
+            const auto new_value = sampleTrilinear(field_view, prev_x, prev_y);
 
             set_point(temp_field_view, x, y, new_value);
         }
@@ -129,11 +134,8 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
                   double* pressure, double* divergence)
 {
     const auto resolution = xRes * yRes;
-    const auto pressure_view = gsl::span<double>(pressure, resolution);
-    //const auto divergence_view = gsl::span<double>(divergence, resolution);
-
-    pressure = nullptr;
-    divergence = nullptr;
+    const auto pressure_view = create_view(pressure, resolution);
+    //const auto divergence_view = create_view(divergence, resolution);
 
     auto iteration = 0;
     auto error = 0.0;
@@ -172,13 +174,9 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
 {
     const auto resolution = xRes * yRes;
 
-    const auto x_velocity_view = gsl::span<double>(xVelocity, resolution);
-    const auto y_velocity_view = gsl::span<double>(yVelocity, resolution);
-    const auto pressure_view = gsl::span<const double>(pressure, resolution);
-
-    xVelocity = nullptr;
-    yVelocity = nullptr;
-    pressure = nullptr;
+    const auto x_velocity_view = create_view(xVelocity, resolution);
+    const auto y_velocity_view = create_view(yVelocity, resolution);
+    const auto pressure_view = create_view(pressure, resolution);
 
     for (auto y = 1; y < yRes - 1; ++y)
     {
