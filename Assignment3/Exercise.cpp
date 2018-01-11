@@ -19,7 +19,6 @@
 
 #include <cmath>
 #include <algorithm>
-#include "gsl/gsl"
 
 static int xRes_static = -1;
 
@@ -57,8 +56,8 @@ double sampleBilinear(double* field,
     const auto x_float_part = fastModf(x, x_int_part);
     const auto y_float_part = fastModf(y, y_int_part);
 
-    const auto index_x = gsl::narrow<int>(x_int_part);
-    const auto index_y = gsl::narrow<int>(y_int_part);
+    const auto index_x = (int)(x_int_part);
+    const auto index_y = (int)(y_int_part);
 
     const auto index_neighbour_x = std::max(0, std::min(width - 1,  index_x + 1));
     const auto index_neighbour_y = std::max(0, std::min(height - 1, index_y + 1));
@@ -82,12 +81,15 @@ void AdvectWithSemiLagrange(int xRes, int yRes, double dt,
         xRes_static = xRes;
 
     #pragma omp parallel for
-    for (auto y = 0; y < yRes - 0; ++y)
+    for (auto y = 1; y < yRes - 1; ++y)
     {
-        for (auto x = 0; x < xRes - 0; ++x)
+        for (auto x = 1; x < xRes - 1; ++x)
         {
             const auto velocity_x = xVelocity[index(x, y)];
             const auto velocity_y = yVelocity[index(x, y)];
+
+            if(velocity_x == 0.0 && velocity_y == 0.0)
+                continue;
 
             auto prev_x = x - velocity_x * dt * xRes;
             auto prev_y = y - velocity_y * dt * yRes;
@@ -109,6 +111,8 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
 
     const auto accuracy_sq = accuracy * accuracy;
 
+    const auto h_sq = 1.0 / resolution;
+
     auto it = 0;
     auto error_sq = accuracy * accuracy;
 
@@ -120,14 +124,14 @@ void SolvePoisson(int xRes, int yRes, int iterations, double accuracy,
         {
             for (auto x = 1; x < xRes - 1; ++x)
             {
-                const auto new_value = (1.0 / resolution * divergence[index(x,y)] +
+                const auto new_value = (h_sq * divergence[index(x,y)] +
                         pressure[index(x + 1, y)] +
                         pressure[index(x - 1, y)] +
                         pressure[index(x, y + 1)] +
                         pressure[index(x, y - 1)]) / 4.0;
 
 
-                const auto r = 1.0 / (xRes * yRes) * divergence[index(x, y)]
+                const auto r = h_sq * divergence[index(x, y)]
                                + pressure[index(x, y - 1)]
                                + pressure[index(x - 1, y)]
                                - 4 * pressure[index(x, y)]
@@ -151,6 +155,7 @@ void CorrectVelocities(int xRes, int yRes, double dt, const double* pressure,
     {
         for (auto x = 1; x < xRes - 1; ++x)
         {
+
             const auto right = pressure[index(x + 1, y)];
             const auto left = pressure[index(x - 1, y)];
             const auto top = pressure[index(x, y - 1)];
