@@ -1,0 +1,5 @@
+module load cmake/3.9.5 
+module load gcc/7.2.0 
+cmake CMakeLists.txt 
+make
+./FluidSim 
