@@ -3,6 +3,6 @@ project(PhysicallyBasedSimulation LANGUAGES CXX)
 
 
 add_subdirectory(
-        Assignment3
+        Final
 )
 
