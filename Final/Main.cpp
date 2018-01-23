@@ -17,89 +17,135 @@
 #include <iostream>
 #include <vector>
 #include <SFML/Graphics.hpp>
-#include <memory>
 
 /* Local includes */
 #include "Polygon.h"
-#include "globals.h"
-#include "chrono_timer.h"
+#include <thread>
 
 
 /*----------------------------------------------------------------*/
 
-bool add_polygon = false;
-bool increase_polygon = false;
-bool random_polygon = false;
-int polygon = 3;
-std::vector<std::shared_ptr<Polygon> > polygons (0);
-
-double xs = 0;
-double ys = 0;
-
-int width  = 600;
-int height  = 600;
-
-long long dt = 0;
-
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(width, height), "2D Collision detection");
-    ChronoTimer t("Unnamed");
+    auto increase_polygon = false;
+    auto polygon_vertex_count = 3;
 
-    {
-        Polygon p = Polygon::Circle(Vector2(200,300),30);
-        std::shared_ptr < Polygon > sp = std::make_shared<Polygon>(p);
-        polygons.push_back(sp);
-        Polygon p1 = Polygon::Square(Vector2(200,500),Vector2(-300,50));
-        std::shared_ptr < Polygon > sp1 = std::make_shared<Polygon>(p1);
-        polygons.push_back(sp1);
-    }
+    std::vector<polygon> polygons;
+
+    double xs = 0;
+    double ys = 0;
+
+    constexpr auto width = 600;
+    constexpr auto height = 600;
+
+    sf::RenderWindow window(sf::VideoMode(width, height), "2D Collision detection");
+
+    polygons.emplace_back(polygon::create_circle(Vector2(200, 300), 30));
+    polygons.emplace_back(polygon::create_rectangle(Vector2(200, 500), Vector2(300, 50)));
+
+    using namespace std::chrono;
+    using clock = std::chrono::high_resolution_clock;
+
+    const auto interval = 10s / 1000.0;
+    
+    auto last_time = clock::now();
+
     while (window.isOpen())
     {
-        dt = t.get_milliseconds();
+        auto elapsed_ms = duration_cast<milliseconds>(clock::now() - last_time);
+
+        if (elapsed_ms < interval)
+        {
+            std::this_thread::sleep_for(0ms);
+            continue;
+        }
 
         sf::Event event;
         while (window.pollEvent(event))
-        {
-            if (event.type == sf::Event::Closed ||
-                    sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) ||
-                    sf::Keyboard::isKeyPressed(sf::Keyboard::Q) )
-                window.close();
-            if(event.type == sf::Event::MouseMoved) { // <- this is how you check to see if an event
-                xs = sf::Mouse::getPosition().x - window.getPosition().x - 10;
-                ys = sf::Mouse::getPosition().y - window.getPosition().y - 35;
-            }
-            if(event.type == sf::Event::MouseButtonPressed) { // <- this is how you check to see if an event
-                Polygon p=Polygon(Vector2(xs,ys),polygon);
-                std::shared_ptr<Polygon> sp = std::make_shared<Polygon>(p);
-                polygons.push_back(sp);
-                increase_polygon = true;
-            }
-            if(event.type == sf::Event::MouseButtonReleased) { // <- this is how you check to see if an event
-                increase_polygon = false;
-                polygons.at(polygons.size()-1)->set_ready();
+            {
+                switch (event.type)
+                {
+                case sf::Event::Closed: window.close(); break;
 
-            }
-            if(sf::Keyboard::isKeyPressed(sf::Keyboard::I)) { // <- this is how you check to see if an event
-                polygon = ((polygon + 1) % 7) + 3;
-            }
-            if(sf::Keyboard::isKeyPressed(sf::Keyboard::D)) { // <- this is how you check to see if an event
-                polygon = ((polygon - 1) % 7) + 3;
-            }
-            if(sf::Keyboard::isKeyPressed(sf::Keyboard::C)) { // <- this is how you check to see if an event
-                polygon = circle;
-            }
-        }
-        if(increase_polygon)
-            polygons.at(polygons.size()-1)->increase(.01);
+                case sf::Event::MouseMoved:
+                {
+                    xs = sf::Mouse::getPosition().x - window.getPosition().x - 10;
+                    ys = sf::Mouse::getPosition().y - window.getPosition().y - 35;
+                } break;
 
-        std::cout<<polygons.size()<<std::endl;
-        window.clear();
-        for(const auto& polygon : polygons) {
-            window.draw(polygon->draw());
-            polygon->update(t.get_milliseconds() - dt);
-        }
+                case sf::Event::MouseButtonPressed:
+                {
+                    polygons.emplace_back(polygon::create_random(
+                        Vector2(xs, ys), polygon_vertex_count));
+
+                    increase_polygon = true;
+
+                } break;
+
+                case sf::Event::MouseButtonReleased:
+                {
+                    increase_polygon = false;
+
+                    polygons.at(polygons.size() - 1).set_ready();
+
+                    std::cout << polygons.size() << std::endl;
+
+                } break;
+
+                case sf::Event::KeyPressed:
+                {
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) ||
+                        sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+                    {
+                        window.close();
+                    }
+
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::I))
+                    {
+                        polygon_vertex_count = ((polygon_vertex_count + 1) % 7) + 3;
+                    }
+
+                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+                    {
+                        polygon_vertex_count = ((polygon_vertex_count - 1) % 7) + 3;
+                    }
+
+                    /*if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
+                    {
+                        polygon_vertex_count = circle;
+                    }*/
+
+                } break;
+
+                default: break;
+                }
+            }
+        
         window.display();
+
+        while(elapsed_ms >= interval)
+        {
+            if (increase_polygon)
+            {
+                polygons.back().increase(1 + interval.count() * 2);
+            }
+
+            for (auto& polygon : polygons)
+            {
+                polygon.update(interval.count());
+            }
+
+            elapsed_ms = duration_cast<milliseconds>(elapsed_ms - interval);
+        }
+
+        window.clear();
+
+        for (auto& polygon : polygons)
+        {
+            window.draw(polygon.get_shape());
+        }
+
+        last_time = clock::now();
     }
 
     return 0;

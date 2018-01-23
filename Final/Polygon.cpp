@@ -2,126 +2,137 @@
 // Created by ivan on 16/01/18.
 //
 
-#include <math.h>
 #include <vector>
 #include <random>
-#include <stdlib.h>
 
-#include <iostream>
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 #include "Polygon.h"
-#include "globals.h"
-
-#define PI 3.14159265
-
 
 using namespace std;
 
-Polygon::Polygon(Vector2 pos) : center(pos.x(),pos.y()),
-                                               vertices(4),
-                                               scale(1),
-                                               velocity({0,0}),
-                                               ready(false) {
-    this->points = vector<Vector2>(vertices);
-}
+polygon::polygon(const Vector2& center, std::vector<Vector2> points)
+    : velocity_({0,0}), ready_(false) 
+{
+    shape_.setPointCount(points.size());
 
-Polygon::Polygon(Vector2 pos, int vertices) : center(pos.x(),pos.y()),
-                                               vertices((vertices==10)?100:vertices),
-                                               scale(1),
-                                               velocity({0,0}),
-                                               ready(false) {
-    if (vertices != circle) {
-        this->points = vector<Vector2>(vertices);
-        const auto angle = 360.0 / (double)vertices;
-
-        std::uniform_real_distribution<> rnd_distr_distance(-angle/2, angle/2);
-
-        for (int i = 0; i < vertices; ++i) {
-            const Vector2 direction = {std::cos((double)i * (angle + rnd_distr_distance(rng)) * PI / 180),
-                                       std::sin((double)i * (angle + rnd_distr_distance(rng)) * PI / 180)};
-
-            this->points[i] = direction;
-        }
-    } else {
-        this->points = vector<Vector2>(vertices);
-
-        const auto angle = 360.0 / (double)vertices;
-
-        for (int i = 0; i < vertices; ++i) {
-            const Vector2 direction = {cos((double)i * angle * PI / 180), sin((double)i * angle * PI / 180)};
-
-            this->points[i] = direction;
-        }
-    }
-}
-
-void Polygon::update(double dt) {
-    dt /= 50;
-    if(ready) {
-        this->velocity += gravity * dt;
-        auto old_center = this->center;
-        this->center += this->velocity * dt;
-        /////////////////////////////////
-        //////COLLISION DETECTION////////
-        /////////////////////////////////
-    }
-}
-
-sf::ConvexShape Polygon::draw() const {
-    // create an empty shape
-    sf::ConvexShape convex;
-
-    convex.setPointCount(points.size());
-
-    for(auto i = 0u; i < points.size(); i++) 
+    for (auto i = 0u; i < points.size(); i++)
     {
-        auto point = center - points[i] * scale;
+        auto point = points[i];
 
-        convex.setPoint(i, sf::Vector2f(
-            static_cast<float>(point.x()), 
+        shape_.setPoint(i, sf::Vector2f(
+            static_cast<float>(point.x()),
             static_cast<float>(point.y())));
     }
-    return convex;
+
+    shape_.setPosition(
+        static_cast<float>(center.x()),
+        static_cast<float>(center.y()));
 }
 
-void Polygon::increase(double dt) {
-    this->scale+=dt;
+void polygon::update(const double dt) 
+{
+    if (!ready_) return;
+
+    velocity_ += gravity * dt;
+    
+    shape_.move(
+        static_cast<float>(velocity_.x()),
+        static_cast<float>(velocity_.y()));
+
 }
 
-void Polygon::set_ready() {
-    this->ready=true;
+
+void polygon::increase(const double factor)
+{
+    shape_.scale(
+        static_cast<float>(factor),
+        static_cast<float>(factor));
 }
 
-std::ostream& operator<<(std::ostream& os, const Polygon& p)
+void polygon::set_ready()
+{
+    this->ready_=true;
+}
+
+std::ostream& operator<<(std::ostream& os, const polygon& p)
 {
     os << "Polygon:";
-    for (auto & point : p.points) {
-        Vector2 real_pos =
-                p.center + (p.scale * point);
-        os<< " " << real_pos.x() << ":" << real_pos.y();
+
+    const auto& shape = p.get_shape();
+
+    for (auto i = 0u; i < shape.getPointCount(); ++i)
+    {
+        const auto point = shape.getPoint(i);
+
+        os<< " " << point.x << ":" << point.y;
     }
+
     return os;
 }
 
-Polygon Polygon::Square(Vector2 pos, Vector2 scale){
-    Polygon retval = Polygon(pos);
-    retval.points[0] = Vector2(0,0);
-    retval.points[1] = Vector2(0,scale.y());
-    retval.points[2] = scale;
-    retval.points[3] = Vector2(scale.x(),0);
-    return retval;
-}
-Polygon Polygon::Line(Vector2 start, Vector2 end){
-    Polygon retval = Polygon(start);
+polygon polygon::create_rectangle(const Vector2 pos, const Vector2 scale)
+{
+    const vector<Vector2> points =
+    {
+        Vector2(0,0),
+        Vector2(0, scale.y()),
+        scale,
+        Vector2(scale.x(), 0)
+    };
 
-    retval.points[0] = Vector2(0,0);
-    retval.points[1] = Vector2(0.0001,0.0001);
-    retval.points[2] = end;
-    retval.points[3] = Vector2(end.x()-0.0001,end.y()-0.0001);
-    return retval;
+    return { pos, points };
 }
 
-Polygon Polygon::Circle(Vector2 center, double radius){
-    Polygon retval = Polygon(center,circle);
-    retval.increase(radius);
-    return retval;
+polygon polygon::create_line(const Vector2 start, const Vector2 end)
+{
+    const vector<Vector2> points =
+    {
+        Vector2(0,0),
+        Vector2(0.0001, 0.0001),
+        end,
+        Vector2(end.x() - 0.0001, end.y() - 0.0001)
+    };
+
+    return { (end - start) / 2, points };
+}
+
+polygon polygon::create_circle(const Vector2 center, const double radius)
+{
+    constexpr auto vertex_count = 100;
+
+    const auto angle = 360.0 / vertex_count;
+
+    vector<Vector2> points;
+    for (auto i = 0; i < vertex_count; ++i) 
+    {
+        points.emplace_back(
+            cos(i * angle * M_PI / 180.0), 
+            sin(i * angle * M_PI / 180.0));
+    }
+
+    polygon p(center, points);
+
+    p.increase(radius);
+
+    return p;
+}
+
+polygon polygon::create_random(const Vector2 center, const size_t vertex_count)
+{
+    const auto angle = 360.0 / vertex_count;
+
+    std::default_random_engine rng;
+    const std::uniform_real_distribution<> rnd_distr_distance(-angle / 2, angle / 2);
+
+    vector<Vector2> points;
+    for (auto i = 0u; i < vertex_count; ++i)
+    {
+        points.emplace_back(
+            std::cos(i * (angle + rnd_distr_distance(rng)) * M_PI / 180.0),
+            std::sin(i * (angle + rnd_distr_distance(rng)) * M_PI / 180.0));
+    }
+
+    return { center, points };
 }
