@@ -33,11 +33,11 @@ Polygon::Polygon(Vector2 pos, int vertices) : center(pos.x(),pos.y()),
         this->points = vector<Vector2>(vertices);
         const auto angle = 360.0 / (double)vertices;
 
-        std::uniform_real_distribution rnd_distr_distance(-angle/2, angle/2);
+        std::uniform_real_distribution<> rnd_distr_distance(-angle/2, angle/2);
 
         for (int i = 0; i < vertices; ++i) {
-            const Vector2 direction = {cos((double)i * (angle + rnd_distr_distance(rng)) * PI / 180),
-                                       sin((double)i * (angle + rnd_distr_distance(rng)) * PI / 180)};
+            const Vector2 direction = {std::cos((double)i * (angle + rnd_distr_distance(rng)) * PI / 180),
+                                       std::sin((double)i * (angle + rnd_distr_distance(rng)) * PI / 180)};
 
             this->points[i] = direction;
         }
@@ -72,9 +72,13 @@ sf::ConvexShape Polygon::draw() const {
 
     convex.setPointCount(points.size());
 
-    for(int i=0;i<points.size();i++) {
-        Vector2 point=this->center - (points[i] * this->scale);
-        convex.setPoint(i, sf::Vector2f(point.x(), point.y()));
+    for(auto i = 0u; i < points.size(); i++) 
+    {
+        auto point = center - points[i] * scale;
+
+        convex.setPoint(i, sf::Vector2f(
+            static_cast<float>(point.x()), 
+            static_cast<float>(point.y())));
     }
     return convex;
 }
