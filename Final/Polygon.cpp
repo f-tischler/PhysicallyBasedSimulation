@@ -123,7 +123,7 @@ polygon polygon::create_random(const Vector2 center, const size_t vertex_count)
     const auto angle = 360.0 / vertex_count;
 
     std::default_random_engine rng;
-    const std::uniform_real_distribution<> rnd_distr_distance(-angle / 2, angle / 2);
+    const std::uniform_real_distribution rnd_distr_distance(-angle / 2, angle / 2);
 
     vector<Vector2> points;
     for (auto i = 0u; i < vertex_count; ++i)
