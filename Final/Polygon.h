@@ -10,7 +10,8 @@
 
 #include "Vec2.h"
 
-static const Vector2 gravity = Vector2(0, 9.81);
+constexpr auto world_scale = 50; // px = 1m
+const Vector2 gravity = Vector2(0, 9.81) * world_scale;
 
 class polygon 
 {
