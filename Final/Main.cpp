@@ -60,69 +60,69 @@ int main()
             continue;
         }
 
+        last_time = clock::now();
+
         sf::Event event;
         while (window.pollEvent(event))
+        {
+            switch (event.type)
             {
-                switch (event.type)
+            case sf::Event::Closed: window.close(); break;
+
+            case sf::Event::MouseMoved:
+            {
+                xs = sf::Mouse::getPosition().x - window.getPosition().x - 10;
+                ys = sf::Mouse::getPosition().y - window.getPosition().y - 35;
+            } break;
+
+            case sf::Event::MouseButtonPressed:
+            {
+                polygons.emplace_back(polygon::create_random(
+                    Vector2(xs, ys), polygon_vertex_count));
+
+                increase_polygon = true;
+
+            } break;
+
+            case sf::Event::MouseButtonReleased:
+            {
+                increase_polygon = false;
+
+                polygons.at(polygons.size() - 1).enable();
+
+                std::cout << polygons.size() << std::endl;
+
+            } break;
+
+            case sf::Event::KeyPressed:
+            {
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) ||
+                    sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
                 {
-                case sf::Event::Closed: window.close(); break;
-
-                case sf::Event::MouseMoved:
-                {
-                    xs = sf::Mouse::getPosition().x - window.getPosition().x - 10;
-                    ys = sf::Mouse::getPosition().y - window.getPosition().y - 35;
-                } break;
-
-                case sf::Event::MouseButtonPressed:
-                {
-                    polygons.emplace_back(polygon::create_random(
-                        Vector2(xs, ys), polygon_vertex_count));
-
-                    increase_polygon = true;
-
-                } break;
-
-                case sf::Event::MouseButtonReleased:
-                {
-                    increase_polygon = false;
-
-                    polygons.at(polygons.size() - 1).set_ready();
-
-                    std::cout << polygons.size() << std::endl;
-
-                } break;
-
-                case sf::Event::KeyPressed:
-                {
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) ||
-                        sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
-                    {
-                        window.close();
-                    }
-
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::I))
-                    {
-                        polygon_vertex_count = ((polygon_vertex_count + 1) % 7) + 3;
-                    }
-
-                    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-                    {
-                        polygon_vertex_count = ((polygon_vertex_count - 1) % 7) + 3;
-                    }
-
-                    /*if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
-                    {
-                        polygon_vertex_count = circle;
-                    }*/
-
-                } break;
-
-                default: break;
+                    window.close();
                 }
-            }
-        
-        window.display();
 
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::I))
+                {
+                    polygon_vertex_count = ((polygon_vertex_count + 1) % 7) + 3;
+                }
+
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+                {
+                    polygon_vertex_count = ((polygon_vertex_count - 1) % 7) + 3;
+                }
+
+                /*if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
+                {
+                    polygon_vertex_count = circle;
+                }*/
+
+            } break;
+
+            default: break;
+            }
+        }
+        
         while(elapsed_ms >= interval)
         {
             if (increase_polygon)
@@ -143,9 +143,9 @@ int main()
         for (auto& polygon : polygons)
         {
             window.draw(polygon.get_shape());
-        }
-
-        last_time = clock::now();
+        }   
+        
+        window.display();
     }
 
     return 0;

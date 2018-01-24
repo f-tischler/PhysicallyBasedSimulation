@@ -28,14 +28,14 @@ public:
 
     void increase(double dt);
 
-    void set_ready();
+    void enable();
 
     friend std::ostream& operator<<(std::ostream& os, const polygon& p);
 
 private:
     sf::ConvexShape shape_;
     Vector2 velocity_;
-    bool ready_;
+    bool enabled_;
 };
 
 #endif //PHYSICALLYBASEDSIMULATION_POLYGON_H

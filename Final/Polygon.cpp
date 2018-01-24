@@ -13,7 +13,7 @@
 using namespace std;
 
 polygon::polygon(const Vector2& center, std::vector<Vector2> points)
-    : velocity_({0,0}), ready_(false) 
+    : velocity_({0,0}), enabled_(false) 
 {
     shape_.setPointCount(points.size());
 
@@ -33,14 +33,13 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
 
 void polygon::update(const double dt) 
 {
-    if (!ready_) return;
+    if (!enabled_) return;
 
     velocity_ += gravity * dt;
     
     shape_.move(
         static_cast<float>(velocity_.x()),
         static_cast<float>(velocity_.y()));
-
 }
 
 
@@ -51,9 +50,9 @@ void polygon::increase(const double factor)
         static_cast<float>(factor));
 }
 
-void polygon::set_ready()
+void polygon::enable()
 {
-    this->ready_=true;
+    enabled_ = true;
 }
 
 std::ostream& operator<<(std::ostream& os, const polygon& p)
