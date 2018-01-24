@@ -38,8 +38,8 @@ void polygon::update(const double dt)
     velocity_ += gravity * dt;
     
     shape_.move(
-        static_cast<float>(velocity_.x()),
-        static_cast<float>(velocity_.y()));
+        static_cast<float>(velocity_.x() * dt),
+        static_cast<float>(velocity_.y() * dt));
 }
 
 
