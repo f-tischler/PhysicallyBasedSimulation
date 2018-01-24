@@ -25,6 +25,26 @@
 
 /*----------------------------------------------------------------*/
 
+void render(sf::RenderWindow& window, const std::vector<polygon>& polygons)
+{
+    window.clear();
+
+    for (auto& polygon : polygons)
+    {
+        window.draw(polygon.get_shape());
+    }
+
+    window.display();
+}
+
+void update(std::vector<polygon>& polygons, const double dt)
+{
+    for (auto& polygon : polygons)
+    {
+        polygon.update(dt);
+    }
+}
+
 int main()
 {
     auto increase_polygon = false;
@@ -44,24 +64,14 @@ int main()
     polygons.emplace_back(polygon::create_rectangle(Vector2(200, 500), Vector2(300, 50)));
 
     using namespace std::chrono;
-    using clock = std::chrono::high_resolution_clock;
+    using clock = high_resolution_clock;
 
-    const auto interval = 10s / 1000.0;
+    const auto interval = duration<double>(10ms);
     
     auto last_time = clock::now();
 
-    while (window.isOpen())
+    auto process_events = [&]()
     {
-        auto elapsed_ms = duration_cast<milliseconds>(clock::now() - last_time);
-
-        if (elapsed_ms < interval)
-        {
-            std::this_thread::sleep_for(0ms);
-            continue;
-        }
-
-        last_time = clock::now();
-
         sf::Event event;
         while (window.pollEvent(event))
         {
@@ -78,7 +88,7 @@ int main()
             case sf::Event::MouseButtonPressed:
             {
                 /*polygons.emplace_back(polygon::create_random(
-                    Vector2(xs, ys), polygon_vertex_count));*/
+                Vector2(xs, ys), polygon_vertex_count));*/
 
                 polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
 
@@ -107,17 +117,17 @@ int main()
                 /*
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::I))
                 {
-                    polygon_vertex_count = ((polygon_vertex_count + 1) % 7) + 3;
+                polygon_vertex_count = ((polygon_vertex_count + 1) % 7) + 3;
                 }
 
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
                 {
-                    polygon_vertex_count = ((polygon_vertex_count - 1) % 7) + 3;
+                polygon_vertex_count = ((polygon_vertex_count - 1) % 7) + 3;
                 }
 
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
                 {
-                    polygon_vertex_count = circle;
+                polygon_vertex_count = circle;
                 }*/
 
             } break;
@@ -125,6 +135,21 @@ int main()
             default: break;
             }
         }
+    };
+
+    while (window.isOpen())
+    {
+        auto elapsed_ms = duration_cast<milliseconds>(clock::now() - last_time);
+
+        if (elapsed_ms < interval)
+        {
+            std::this_thread::sleep_for(0ms);
+            continue;
+        }
+
+        last_time = clock::now();
+
+        process_events();
         
         while(elapsed_ms >= interval)
         {
@@ -133,22 +158,12 @@ int main()
                 polygons.back().increase(1 + interval.count() * 2);
             }
 
-            for (auto& polygon : polygons)
-            {
-                polygon.update(interval.count());
-            }
+            update(polygons, interval.count());
 
             elapsed_ms = duration_cast<milliseconds>(elapsed_ms - interval);
         }
 
-        window.clear();
-
-        for (auto& polygon : polygons)
-        {
-            window.draw(polygon.get_shape());
-        }   
-        
-        window.display();
+        render(window, polygons);
     }
 
     return 0;
