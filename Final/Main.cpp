@@ -77,8 +77,10 @@ int main()
 
             case sf::Event::MouseButtonPressed:
             {
-                polygons.emplace_back(polygon::create_random(
-                    Vector2(xs, ys), polygon_vertex_count));
+                /*polygons.emplace_back(polygon::create_random(
+                    Vector2(xs, ys), polygon_vertex_count));*/
+
+                polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
 
                 increase_polygon = true;
 
@@ -102,6 +104,7 @@ int main()
                     window.close();
                 }
 
+                /*
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::I))
                 {
                     polygon_vertex_count = ((polygon_vertex_count + 1) % 7) + 3;
@@ -112,7 +115,7 @@ int main()
                     polygon_vertex_count = ((polygon_vertex_count - 1) % 7) + 3;
                 }
 
-                /*if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
                 {
                     polygon_vertex_count = circle;
                 }*/
