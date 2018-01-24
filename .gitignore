@@ -43,3 +43,5 @@ Assignment1/CMakeSettings.json
 **/.vs/VSWorkspaceState.json
 .idea/
 cmake-build-debug/
+**/CMakeSettings.json
+**/.vs/
