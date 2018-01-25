@@ -41,13 +41,14 @@ void update(std::vector<polygon>& polygons, const double dt)
 {
     for (auto& polygon : polygons)
     {
-        polygon.update(dt);
+        polygon.update(polygons,dt);
     }
 }
 
 int main()
 {
     auto increase_polygon = false;
+    auto draw_circle = false;
     auto polygon_vertex_count = 3;
 
     std::vector<polygon> polygons;
@@ -87,10 +88,12 @@ int main()
 
             case sf::Event::MouseButtonPressed:
             {
-                /*polygons.emplace_back(polygon::create_random(
-                Vector2(xs, ys), polygon_vertex_count));*/
+                if(draw_circle)
+                    polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
+                else
+                    polygons.emplace_back(polygon::create_random(
+                Vector2(xs, ys), polygon_vertex_count));
 
-                polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
 
                 increase_polygon = true;
 
@@ -114,21 +117,16 @@ int main()
                     window.close();
                 }
 
-                /*
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::I))
+                if(event.key.code > sf::Keyboard::Num2 && event.key.code < sf::Keyboard::Escape)
                 {
-                polygon_vertex_count = ((polygon_vertex_count + 1) % 7) + 3;
+                    polygon_vertex_count = event.key.code - sf::Keyboard::Num0;
                 }
 
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-                {
-                polygon_vertex_count = ((polygon_vertex_count - 1) % 7) + 3;
-                }
 
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
                 {
-                polygon_vertex_count = circle;
-                }*/
+                draw_circle = true;
+                }
 
             } break;
 

@@ -14,7 +14,7 @@ endif()
 set(SOURCE_FILES 
 	${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/Polygon.cpp
-)
+		)
 
 add_executable(FinalProject ${SOURCE_FILES})
 

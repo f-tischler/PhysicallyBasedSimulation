@@ -23,7 +23,7 @@ public:
     static polygon create_circle(const Vector2 center, const double radius);
     static polygon create_random(const Vector2 center, const size_t vertex_count);
 
-    void update(double dt);
+    void update(std::vector<polygon>& polygons, const double dt);
 
     const sf::ConvexShape& get_shape() const { return shape_; }
 
@@ -32,11 +32,13 @@ public:
     void enable();
 
     friend std::ostream& operator<<(std::ostream& os, const polygon& p);
+    bool operator ==(const polygon &other) const;
 
 private:
     sf::ConvexShape shape_;
     Vector2 velocity_;
     bool enabled_;
+
 };
 
 #endif //PHYSICALLYBASEDSIMULATION_POLYGON_H
