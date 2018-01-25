@@ -153,4 +153,3 @@ polygon polygon::create_random(const Vector2 center, const size_t vertex_count)
 
     return { center, points };
 }
-
