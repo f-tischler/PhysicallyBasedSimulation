@@ -39,11 +39,10 @@ enum class GameLoopType
 void render(sf::RenderWindow& window, const std::vector<polygon>& polygons)
 {
     window.clear();
-
-
+    
     for (auto& polygon : polygons)
     {
-        window.draw(polygon.get_shape());
+        polygon.draw(window);
     }
 
 	Console::instance().print(window);

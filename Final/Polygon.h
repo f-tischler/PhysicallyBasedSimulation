@@ -25,6 +25,7 @@ public:
     static polygon create_random(const Vector2 center, const size_t vertex_count);
 
     void update(const double dt);
+    void draw(sf::RenderWindow& window) const;
 
     const sf::Shape& get_shape() const { return shape_; }
     physical_object& get_physical_object() { return physical_object_; }

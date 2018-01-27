@@ -56,6 +56,11 @@ void polygon::update(const double dt)
     shape_.setRotation(static_cast<float>(physical_object_.rotation().angle()));
 }
 
+void polygon::draw(sf::RenderWindow& window) const
+{
+    window.draw(shape_);
+}
+
 
 void polygon::increase(const double factor)
 {
