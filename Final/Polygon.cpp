@@ -54,7 +54,7 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
         static_cast<float>(center.y()));
 }
 
-void polygon::update(std::vector<polygon>& polygons, const double dt)
+void polygon::update(const double dt)
 {
     if (!enabled_) return;
 
@@ -63,20 +63,6 @@ void polygon::update(std::vector<polygon>& polygons, const double dt)
         static_cast<float>(velocity_.y() * dt));
 
     velocity_ += gravity * dt;
-
-    for(const auto & poly : polygons) {
-        if(this == &poly)
-            continue;
-        if (shape_.getPointCount() == 100 && poly.shape_.getPointCount() == 100)
-        {
-            sf::Vector2f distance = { shape_.getPosition() - poly.shape_.getPosition() };
-            if( (this->shape_.getScale() + poly.shape_.getScale()).x > Vector2(distance.x,distance.y).length() )
-                shape_.move(
-                        static_cast<float>(- velocity_.x() * dt),
-                        static_cast<float>(- velocity_.y() * dt));
-        }
-
-    }
 }
 
 
