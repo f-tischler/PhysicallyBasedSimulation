@@ -16,7 +16,6 @@
 #ifndef __VEC2_T_H__
 #define __VEC2_T_H__
 
-
 template<typename T>
 class Vector2T
 {
@@ -25,7 +24,7 @@ public:
     Vector2T(T v) { m_xy[0] = v; m_xy[1] = v; }
     Vector2T(const T x, const T y)  { m_xy[0] = x; m_xy[1] = y; }
     Vector2T(const Vector2T<T> &other) { *this = other; }
-    
+
     Vector2T<T> & operator=( const Vector2T<T> &other ) 
     { 
         m_xy[0]= other.m_xy[0]; m_xy[1] = other.m_xy[1]; return *this; 
