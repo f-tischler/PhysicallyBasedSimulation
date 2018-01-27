@@ -160,7 +160,7 @@ int main()
                 const auto random_point = polygon.get_shape().getPoint(rnd(rng));
 
                 polygons.back().get_physical_object().accelerate(
-                    to_eigen_vector(random_point), { 0, -150.0f });
+                    to_eigen_vector(random_point), { 0, -15.0f });
 
                 increase_polygon = true;
 

@@ -11,8 +11,8 @@
 #include "Vec2.h"
 #include "physical_object.h"
 
-constexpr auto world_scale = 50; // px = 1m
 const Vector2 gravity = Vector2(0, 9.81);
+//const Vector2 gravity = Vector2(0, 01);
 
 class polygon 
 {
@@ -38,10 +38,13 @@ public:
 
 private:
     sf::ConvexShape shape_;
+    sf::CircleShape cof_shape_;
    
     physical_object physical_object_;
 
     bool enabled_;
+
+    void update_shapes();
 };
 
 inline sf::Vector2f to_sf_vector(Vector2d v)

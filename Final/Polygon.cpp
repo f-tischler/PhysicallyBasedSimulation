@@ -27,7 +27,7 @@ std::vector<std::tuple<Vector2d, double>> create_mass_points(
 }
 
 polygon::polygon(const Vector2& center, std::vector<Vector2> points)
-    : enabled_(false), physical_object_(to_eigen_vector(center), create_mass_points(0.5, points))
+    : physical_object_(to_eigen_vector(center), create_mass_points(0.5, points)), enabled_(false)
 {
     shape_.setPointCount(points.size());
 
@@ -40,9 +40,13 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
             static_cast<float>(point.y())));
     }
 
-    shape_.setPosition(
-        static_cast<float>(center.x()),
-        static_cast<float>(center.y()));
+    shape_.setOrigin(to_sf_vector(physical_object_.center_of_mass()));
+
+    cof_shape_.setRadius(0.05f);
+    cof_shape_.setFillColor(sf::Color::Red);
+    cof_shape_.setOrigin(cof_shape_.getRadius(), cof_shape_.getRadius());
+
+    update_shapes();
 }
 
 void polygon::update(const double dt)
@@ -52,13 +56,21 @@ void polygon::update(const double dt)
     physical_object_.accelerate({ gravity.x(), gravity.y() });
     physical_object_.update(dt);
 
+    update_shapes();
+}
+
+void polygon::update_shapes()
+{
+    shape_.setRotation(static_cast<float>(physical_object_.rotation().angle() * 180 / M_PI));
     shape_.setPosition(to_sf_vector(physical_object_.position()));
-    shape_.setRotation(static_cast<float>(physical_object_.rotation().angle()));
+
+    cof_shape_.setPosition(to_sf_vector(physical_object_.position()));
 }
 
 void polygon::draw(sf::RenderWindow& window) const
 {
     window.draw(shape_);
+    window.draw(cof_shape_);
 }
 
 
@@ -67,6 +79,11 @@ void polygon::increase(const double factor)
     shape_.scale(
         static_cast<float>(factor),
         static_cast<float>(factor));
+
+    cof_shape_.scale(
+        static_cast<float>(factor),
+        static_cast<float>(factor));
+
 }
 
 void polygon::enable()
@@ -92,15 +109,23 @@ std::ostream& operator<<(std::ostream& os, const polygon& p)
 
 polygon polygon::create_rectangle(const Vector2 pos, const Vector2 scale)
 {
+    const auto aspect = scale.x() / scale.y();
+    const auto half_height = 0.5;
+    const auto half_width = half_height * aspect;
+
     const std::vector<Vector2> points =
     {
-        Vector2(0,0),
-        Vector2(0, scale.y()),
-        scale,
-        Vector2(scale.x(), 0)
+        Vector2(-half_width, -half_height),
+        Vector2(-half_width,  half_height),
+        Vector2( half_width,  half_height),
+        Vector2( half_width, -half_height)
     };
 
-    return { pos, points };
+    polygon p(pos, points);
+
+    p.increase(scale.x() / half_width / 2);
+
+    return p;
 }
 
 polygon polygon::create_line(const Vector2 start, const Vector2 end)

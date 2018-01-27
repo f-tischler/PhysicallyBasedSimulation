@@ -1,7 +1,7 @@
 #include "physical_object.h"
 #include <numeric>
 
-constexpr auto world_scale = 50; // px = 1m
+constexpr auto world_scale = 10; // px = 1m
 
 physical_object::physical_object(const Vector2d position,
     const std::vector<std::tuple<Vector2d, double>>& points)
@@ -15,11 +15,13 @@ physical_object::physical_object(const Vector2d position,
     });
 
     // initial position of center of mass
-    center_of_mass_ = std::accumulate(points.begin(), points.end(), Vector2d(0, 0), 
+    center_of_mass_ = std::accumulate(points.begin(), points.end(), Vector2d(0, 0),
         [](auto current_sum, auto p)
     {
         return current_sum + std::get<0>(p) * std::get<1>(p);
     }) / mass_;
+
+    position_ = position + center_of_mass_;
 
     // inertia
     const auto inertia = std::accumulate(points.begin(), points.end(), 0.0,
@@ -37,7 +39,6 @@ physical_object::physical_object(const Vector2d position,
 
 void physical_object::update(const double dt)
 {
-    center_of_mass_ += velocity_ * dt;
     position_ += velocity_ * dt;
 
     velocity_ += force_ / mass_ * dt * world_scale;
