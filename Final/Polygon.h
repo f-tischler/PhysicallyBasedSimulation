@@ -9,9 +9,10 @@
 #include <SFML/Graphics.hpp>
 
 #include "Vec2.h"
+#include "physical_object.h"
 
 constexpr auto world_scale = 50; // px = 1m
-const Vector2 gravity = Vector2(0, 9.81) * world_scale;
+const Vector2 gravity = Vector2(0, 9.81);
 
 class polygon 
 {
@@ -23,22 +24,42 @@ public:
     static polygon create_circle(const Vector2 center, const double radius);
     static polygon create_random(const Vector2 center, const size_t vertex_count);
 
-    void update(std::vector<polygon>& polygons, const double dt);
+    void update(const double dt);
 
-    const sf::ConvexShape& get_shape() const { return shape_; }
+    const sf::Shape& get_shape() const { return shape_; }
+    physical_object& get_physical_object() { return physical_object_; }
 
     void increase(double dt);
 
     void enable();
 
     friend std::ostream& operator<<(std::ostream& os, const polygon& p);
-    bool operator ==(const polygon &other) const;
 
 private:
     sf::ConvexShape shape_;
-    Vector2 velocity_;
-    bool enabled_;
+   
+    physical_object physical_object_;
 
+    bool enabled_;
 };
+
+inline sf::Vector2f to_sf_vector(Vector2d v)
+{
+    return 
+    { 
+        static_cast<float>(v.x()), 
+        static_cast<float>(v.y())
+    };
+}
+
+inline Vector2d to_eigen_vector(const Vector2& v)
+{
+    return { v.x(), v.y() };
+}
+
+inline Vector2d to_eigen_vector(const sf::Vector2f& v)
+{
+    return { v.x, v.y };
+}
 
 #endif //PHYSICALLYBASEDSIMULATION_POLYGON_H

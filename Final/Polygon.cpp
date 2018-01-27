@@ -11,11 +11,23 @@
 #include "Polygon.h"
 #include <SFML/System/Vector2.hpp>
 
-using namespace std;
 std::default_random_engine rng;
 
+std::vector<std::tuple<Vector2d, double>> create_mass_points(
+    const double mass_per_point,
+    const std::vector<Vector2>& points)
+{
+    std::vector<std::tuple<Vector2d, double>> mass_points;
+    for(const auto& p : points)
+    {
+        mass_points.push_back({ to_eigen_vector(p), mass_per_point });
+    }
+
+    return mass_points;
+}
+
 polygon::polygon(const Vector2& center, std::vector<Vector2> points)
-    : velocity_({0,0}), enabled_(false)
+    : enabled_(false), physical_object_(to_eigen_vector(center), create_mass_points(0.5, points))
 {
     shape_.setPointCount(points.size());
 
@@ -33,29 +45,15 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
         static_cast<float>(center.y()));
 }
 
-void polygon::update(std::vector<polygon>& polygons, const double dt)
+void polygon::update(const double dt)
 {
     if (!enabled_) return;
 
-    shape_.move(
-        static_cast<float>(velocity_.x() * dt),
-        static_cast<float>(velocity_.y() * dt));
+    physical_object_.accelerate({ gravity.x(), gravity.y() });
+    physical_object_.update(dt);
 
-    velocity_ += gravity * dt;
-
-    for(const auto & poly : polygons) {
-        if(this == &poly)
-            continue;
-        if (shape_.getPointCount() == 100 && poly.shape_.getPointCount() == 100)
-        {
-            sf::Vector2f distance = { shape_.getPosition() - poly.shape_.getPosition() };
-            if( (this->shape_.getScale() + poly.shape_.getScale()).x > Vector2(distance.x,distance.y).length() )
-                shape_.move(
-                        static_cast<float>(- velocity_.x() * dt),
-                        static_cast<float>(- velocity_.y() * dt));
-        }
-
-    }
+    shape_.setPosition(to_sf_vector(physical_object_.position()));
+    shape_.setRotation(static_cast<float>(physical_object_.rotation().angle()));
 }
 
 
@@ -89,7 +87,7 @@ std::ostream& operator<<(std::ostream& os, const polygon& p)
 
 polygon polygon::create_rectangle(const Vector2 pos, const Vector2 scale)
 {
-    const vector<Vector2> points =
+    const std::vector<Vector2> points =
     {
         Vector2(0,0),
         Vector2(0, scale.y()),
@@ -102,7 +100,7 @@ polygon polygon::create_rectangle(const Vector2 pos, const Vector2 scale)
 
 polygon polygon::create_line(const Vector2 start, const Vector2 end)
 {
-    const vector<Vector2> points =
+    const std::vector<Vector2> points =
     {
         Vector2(0,0),
         Vector2(0.0001, 0.0001),
@@ -119,7 +117,7 @@ polygon polygon::create_circle(const Vector2 center, const double radius)
 
     const auto angle = 360.0 / vertex_count;
 
-    vector<Vector2> points;
+    std::vector<Vector2> points;
     for (auto i = 0; i < vertex_count; ++i) 
     {
         points.emplace_back(
@@ -140,7 +138,7 @@ polygon polygon::create_random(const Vector2 center, const size_t vertex_count)
 
     const std::uniform_real_distribution<double> rnd_distr_distance(- angle / vertex_count, angle / vertex_count);
 
-    vector<Vector2> points;
+    std::vector<Vector2> points;
     for (auto i = 0u; i < vertex_count; ++i)
     {
         const auto final_angle = angle + rnd_distr_distance(rng);

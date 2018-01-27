@@ -23,6 +23,7 @@
 #include "Console.hpp"
 #include <thread>
 #include <numeric>
+#include <random>
 
 
 enum class GameLoopType
@@ -54,7 +55,7 @@ void update(std::vector<polygon>& polygons, const double dt)
 {
     for (auto& polygon : polygons)
     {
-        polygon.update(polygons,dt);
+        polygon.update(dt);
     }
 }
 
@@ -128,6 +129,8 @@ int main()
 		Console::instance().set_param(name, smoother.get());
 	};
 
+    std::default_random_engine rng;
+
     auto process_events = [&]()
     {
         sf::Event event;
@@ -148,9 +151,17 @@ int main()
                 if(draw_circle)
                     polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
                 else
-                    polygons.emplace_back(polygon::create_random(
-                Vector2(xs, ys), polygon_vertex_count));
+                    polygons.emplace_back(polygon::create_random(Vector2(xs, ys), 
+                        polygon_vertex_count));
 
+                auto& polygon = polygons.back();
+                const auto& shape = polygon.get_shape();
+
+                std::uniform_int_distribution<unsigned> rnd(0, shape.getPointCount() - 1);
+                const auto random_point = polygon.get_shape().getPoint(rnd(rng));
+
+                polygons.back().get_physical_object().accelerate(
+                    to_eigen_vector(random_point), { 0, -150.0f });
 
                 increase_polygon = true;
 
