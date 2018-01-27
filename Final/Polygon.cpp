@@ -17,8 +17,6 @@ std::default_random_engine rng;
 polygon::polygon(const Vector2& center, std::vector<Vector2> points)
     : velocity_({0,0}), enabled_(false)
 {
-
-
     shape_.setPointCount(points.size());
 
     for (auto i = 0u; i < points.size(); i++)
@@ -140,7 +138,7 @@ polygon polygon::create_random(const Vector2 center, const size_t vertex_count)
 {
     const auto angle = 360.0 / vertex_count;
 
-    const std::uniform_real_distribution rnd_distr_distance(- angle / vertex_count, angle / vertex_count);
+    const std::uniform_real_distribution<double> rnd_distr_distance(- angle / vertex_count, angle / vertex_count);
 
     vector<Vector2> points;
     for (auto i = 0u; i < vertex_count; ++i)
