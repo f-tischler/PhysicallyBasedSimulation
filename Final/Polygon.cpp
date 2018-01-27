@@ -17,14 +17,35 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
 {
     shape_.setPointCount(points.size());
 
+	auto accum = Vector2{ 0, 0 };
     for (auto i = 0u; i < points.size(); i++)
     {
         auto point = points[i];
+		accum += point;
 
         shape_.setPoint(i, sf::Vector2f(
             static_cast<float>(point.x()),
             static_cast<float>(point.y())));
     }
+
+	// Initialze area
+	area_ = 0.0;
+
+	// Calculate value of shoelace formula
+	int j = points.size() - 1;
+	for (int i = 0; i < points.size(); i++)
+	{
+		auto point_i = points[i];
+		auto point_j = points[j];
+
+		area_ += (point_j.x() + point_i.x()) * (point_j.y() - point_i.y());
+		j = i;  // j is previous vertex to i
+	}
+
+	// Return absolute value
+	area_ = abs(area_ / 2.0);
+
+	center_ = accum / points.size();
 
     shape_.setPosition(
         static_cast<float>(center.x()),
@@ -71,14 +92,14 @@ std::ostream& operator<<(std::ostream& os, const polygon& p)
     return os;
 }
 
-polygon polygon::create_rectangle(const Vector2 pos, const Vector2 scale)
+polygon polygon::create_rectangle(const Vector2 pos, const Vector2 size)
 {
     const vector<Vector2> points =
     {
         Vector2(0,0),
-        Vector2(0, scale.y()),
-        scale,
-        Vector2(scale.x(), 0)
+        Vector2(0, size.y()),
+		size,
+        Vector2(size.x(), 0)
     };
 
     return { pos, points };
