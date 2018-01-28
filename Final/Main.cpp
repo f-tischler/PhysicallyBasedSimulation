@@ -231,7 +231,7 @@ int main()
 		{
 			if (increase_polygon)
 			{
-				polygons.back().increase(1 + interval.count() * 2);
+				polygons.back().scale(1 + interval.count() * 2);
 			}
 
 			measure("Update", update_time_smooth, [&]
@@ -258,7 +258,7 @@ int main()
 		process_events();
 
 		if (increase_polygon)
-			polygons.back().increase(1 + elapsed_s.count() * 2);
+			polygons.back().scale(1 + elapsed_s.count() * 2);
 
 
 		measure("Update", update_time_smooth, [&]

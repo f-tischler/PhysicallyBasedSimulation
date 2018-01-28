@@ -30,8 +30,7 @@ public:
     const sf::Shape& get_shape() const { return shape_; }
     physical_object& get_physical_object() { return physical_object_; }
 
-    void increase(double dt);
-
+    void scale(double dt);
     void enable();
 
     friend std::ostream& operator<<(std::ostream& os, const polygon& p);
@@ -45,6 +44,7 @@ private:
     bool enabled_;
 
     void update_shapes();
+    void set_color(const sf::Color& color);
 };
 
 inline sf::Vector2f to_sf_vector(Vector2d v)
