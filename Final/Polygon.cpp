@@ -21,8 +21,9 @@ std::vector<std::tuple<Vector2d, double>> create_mass_points(
 
     // Calculate value of shoelace formula
     auto area = 0.0;
-    int j = points.size() - 1;
-    for (int i = 0; i < points.size(); i++)
+    auto j = points.size() - 1;
+
+    for (auto i = 0u; i < points.size(); i++)
     {
         auto point_i = points[i];
         auto point_j = points[j];
@@ -114,7 +115,7 @@ void polygon::draw(sf::RenderWindow& window) const
         circle.setFillColor(sf::Color{255, 0, 255});
         window.draw(circle);
 
-        const auto center = physical_object_.center_of_mass_local() + physical_object_.position();
+        const auto center = physical_object_.center_of_mass_global();
         const auto direction = contact - center;
 
         sf::Vertex line[] =

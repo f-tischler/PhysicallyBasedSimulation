@@ -3,8 +3,8 @@
 
 physical_object::physical_object(const Vector2d position,
     const std::vector<std::tuple<Vector2d, double>>& points)
-    : position_(position), rotation_(0), velocity_(0, 0), force_(0, 0), 
-    torque_(0), angular_momentum_(0), points_(points.size()), scale_(1), radius_(0)
+    : scale_(1), radius_(0), position_(position), rotation_(0), 
+    velocity_(0, 0), force_(0, 0), torque_(0), angular_momentum_(0), points_(points.size())
 {
     // total mass
     mass_ = std::accumulate(points.begin(), points.end(), 0.0, 

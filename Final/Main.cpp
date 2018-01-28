@@ -14,6 +14,10 @@
 *******************************************************************/
 
 /* Standard includes */
+#include <thread>
+#include <random>
+#include <iostream>
+#include <cmath>
 #include <iostream>
 #include <vector>
 #include <SFML/Graphics.hpp>
@@ -22,10 +26,7 @@
 #include "Polygon.h"
 #include "Console.hpp"
 #include "ContactInfo.hpp"
-#include <thread>
-#include <numeric>
-#include <random>
-
+#include "smoother.h"
 
 enum class GameLoopType
 {
@@ -33,7 +34,6 @@ enum class GameLoopType
 	Variable,
 	Unkown
 };
-
 
 /*----------------------------------------------------------------*/
 
@@ -50,12 +50,6 @@ void render(sf::RenderWindow& window, const std::vector<polygon>& polygons)
 
     window.display();
 }
-
-
-#include <iostream>
-#include <cmath>
-#include <assert.h>
-using namespace std;
 
 bool lineSegmentIntersection(
 	double Ax, double Ay,
@@ -175,7 +169,6 @@ void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contac
 	}
 }
 
-
 std::vector<ContactInfo> collision_detection(std::vector<polygon>& polygons)
 {
 	std::vector<ContactInfo> constacts;
@@ -216,7 +209,7 @@ void collision_resolution(const std::vector<ContactInfo>& contacts)
 
 void update(std::vector<polygon>& polygons, const double dt)
 {
-	auto contacts = collision_detection(polygons);
+	const auto contacts = collision_detection(polygons);
 	
 	if (!contacts.empty())
 		collision_resolution(contacts);
@@ -226,29 +219,6 @@ void update(std::vector<polygon>& polygons, const double dt)
 		polygon.update(dt);
 	}
 }
-
-#include<deque>
-
-template<typename T, unsigned int MAX>
-class Smoother
-{
-public:
-
-	void add(T v) 
-	{
-		data.push_back(v);
-		if (data.size() > MAX)
-			data.pop_front();
-	}
-
-	T get()
-	{
-		return std::accumulate(data.begin(), data.end(), 0.0) / data.size();
-	}
-
-private:
-	std::deque<T> data;
-};
 
 int main()
 {
@@ -280,8 +250,8 @@ int main()
 
 	auto game_loop_type = GameLoopType::Fixed;
 
-	Smoother<double, 100> draw_time_smooth;
-	Smoother<double, 100> update_time_smooth;
+	smoother<double, 100> draw_time_smooth;
+	smoother<double, 100> update_time_smooth;
 
     auto last_time = clock::now();
 
