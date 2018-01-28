@@ -37,7 +37,11 @@ public:
 
     Vector2d position() const { return position_; }
     Rotation2D rotation() const { return rotation_; }
-    Vector2d center_of_mass() const { return center_of_mass_; }
+
+    Vector2d center_of_mass_local() const { return center_of_mass_; }
+    Vector2d center_of_mass_global() const { return position_ + center_of_mass_; }
+
+    double bounding_radius() const { return radius_; }
 
     void set_scale(const double scale) { scale_ = scale; update_points(); }
     double get_scale() const { return scale_; }
@@ -50,6 +54,7 @@ public:
 private:
     double mass_;
     double scale_;
+    double radius_;
 
     Vector2d center_of_mass_; 
     Vector2d position_;

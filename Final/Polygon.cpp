@@ -61,7 +61,7 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
             static_cast<float>(point.y())));
     }
 
-    const auto cof = as_screen_coordinates(physical_object_.center_of_mass());
+    const auto cof = as_screen_coordinates(physical_object_.center_of_mass_local());
 
     shape_.setOutlineThickness(-0.05);
     shape_.setOrigin(cof);
@@ -114,7 +114,7 @@ void polygon::draw(sf::RenderWindow& window) const
         circle.setFillColor(sf::Color{255, 0, 255});
         window.draw(circle);
 
-        const auto center = physical_object_.center_of_mass() + physical_object_.position();
+        const auto center = physical_object_.center_of_mass_local() + physical_object_.position();
         const auto direction = contact - center;
 
         sf::Vertex line[] =

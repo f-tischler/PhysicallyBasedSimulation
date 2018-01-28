@@ -54,8 +54,8 @@ public:
 	{
         return
         {
-            physical_object_.center_of_mass().x(),
-            physical_object_.center_of_mass().y()
+            physical_object_.center_of_mass_local().x(),
+            physical_object_.center_of_mass_local().y()
         };
 	}
 

@@ -111,7 +111,7 @@ bool lineSegmentIntersection(
 
 void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contact_points)
 {
-	auto get_points = [](const physical_object& object)
+	const auto get_points = [](const physical_object& object)
 	{
 		using line_t = std::tuple<Vector2d, Vector2d>;
 
@@ -119,7 +119,7 @@ void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contac
 
         const auto position = 
             object.position() +
-            object.center_of_mass();
+            object.center_of_mass_local();
 
         const auto& points = object.get_points();
 
@@ -138,8 +138,17 @@ void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contac
 		return lines;
 	};
 
-	auto lines_a = get_points(a.get_physical_object());
-	auto lines_b = get_points(b.get_physical_object());
+    const auto& object_a = a.get_physical_object();
+    const auto& object_b = b.get_physical_object();
+
+    if ((object_a.center_of_mass_global() -
+        object_b.center_of_mass_global()).norm() >
+        object_a.bounding_radius() +
+        object_b.bounding_radius())
+        return;
+
+	auto lines_a = get_points(object_a);
+	auto lines_b = get_points(object_b);
 
 	for (auto& line_a : lines_a)
 	{
