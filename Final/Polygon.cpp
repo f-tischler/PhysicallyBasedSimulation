@@ -20,14 +20,14 @@ std::vector<std::tuple<Vector2d, double>> create_mass_points(
     std::vector<std::tuple<Vector2d, double>> mass_points;
     for(const auto& p : points)
     {
-        mass_points.push_back({ to_eigen_vector(p), mass_per_point });
+        mass_points.push_back({ as_world_coordinates(p), mass_per_point });
     }
 
     return mass_points;
 }
 
 polygon::polygon(const Vector2& center, std::vector<Vector2> points)
-    : physical_object_(to_eigen_vector(center), create_mass_points(0.5, points)), enabled_(false)
+    : physical_object_(as_world_coordinates(center), create_mass_points(0.5, points)), enabled_(false)
 {
     shape_.setPointCount(points.size());
 
@@ -40,17 +40,19 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
             static_cast<float>(point.y())));
     }
 
+    const auto cof = as_screen_coordinates(physical_object_.center_of_mass());
+
     shape_.setOutlineThickness(-0.05);
-    shape_.setOrigin(
-    {
-        static_cast<float>(physical_object_.center_of_mass().x()),
-        -static_cast<float>(physical_object_.center_of_mass().y())
+    shape_.setOrigin(cof);
+
+    cof_shape_.setFillColor(sf::Color::Yellow);
+    cof_shape_.setRadius(0.05f);
+    cof_shape_.setOrigin(
+    { 
+        cof.x + cof_shape_.getRadius(), 
+        cof.y + cof_shape_.getRadius() 
     });
 
-    cof_shape_.setRadius(0.05f);
-    cof_shape_.setOrigin({ cof_shape_.getRadius(), cof_shape_.getRadius() });
-    cof_shape_.setFillColor(sf::Color::Yellow);
-    
     update_shapes();
 }
 
@@ -67,9 +69,9 @@ void polygon::update(const double dt)
 void polygon::update_shapes()
 {
     shape_.setRotation(static_cast<float>(physical_object_.rotation().angle() * 180 / M_PI));
-    shape_.setPosition(to_sf_vector(physical_object_.position()));
+    shape_.setPosition(as_screen_coordinates(physical_object_.position()));
 
-    cof_shape_.setPosition(to_sf_vector(physical_object_.position()));
+    cof_shape_.setPosition(as_screen_coordinates(physical_object_.position()));
 }
 
 void polygon::draw(sf::RenderWindow& window) const

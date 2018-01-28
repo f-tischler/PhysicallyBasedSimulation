@@ -11,8 +11,9 @@
 #include "Vec2.h"
 #include "physical_object.h"
 
-const Vector2 gravity = Vector2(0, 9.81);
-//const Vector2 gravity = Vector2(0, 01);
+const Vector2 gravity = Vector2(0, -9.81);
+
+constexpr auto screen_scale = 10; // px = 1m
 
 class polygon 
 {
@@ -47,23 +48,23 @@ private:
     void set_color(const sf::Color& color);
 };
 
-inline sf::Vector2f to_sf_vector(Vector2d v)
+inline sf::Vector2f as_screen_coordinates(Vector2d v)
 {
     return 
     { 
-        static_cast<float>(v.x()), 
-        static_cast<float>(v.y())
+        static_cast<float>(v.x()) * screen_scale,
+        -static_cast<float>(v.y() * screen_scale)
     };
 }
 
-inline Vector2d to_eigen_vector(const Vector2& v)
+inline Vector2d as_world_coordinates(const Vector2& v)
 {
-    return { v.x(), v.y() };
+    return { v.x() / screen_scale, -v.y() / screen_scale};
 }
 
-inline Vector2d to_eigen_vector(const sf::Vector2f& v)
+inline Vector2d as_world_coordinates(const sf::Vector2f& v)
 {
-    return { v.x, v.y };
+    return { v.x / screen_scale, -v.y / screen_scale };
 }
 
 #endif //PHYSICALLYBASEDSIMULATION_POLYGON_H

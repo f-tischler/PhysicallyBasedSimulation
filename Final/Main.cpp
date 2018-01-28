@@ -160,7 +160,7 @@ int main()
                 const auto random_point = polygon.get_shape().getPoint(rnd(rng));
 
                 polygons.back().get_physical_object().accelerate(
-                    to_eigen_vector(random_point), { 0, -15.0f });
+                    as_world_coordinates(random_point), { 0, 15.0f });
 
                 increase_polygon = true;
 
@@ -186,7 +186,7 @@ int main()
 
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::G))
 				{
-					game_loop_type = (GameLoopType)(((int)game_loop_type) + 1);
+					game_loop_type = static_cast<GameLoopType>(static_cast<int>(game_loop_type) + 1);
 					if (game_loop_type == GameLoopType::Unkown)
 						game_loop_type = GameLoopType::Fixed;
 
@@ -217,8 +217,8 @@ int main()
 
 		if (elapsed_ms < interval)
 		{
-			auto interval_ms = duration_cast<milliseconds>(interval);
-			auto wait = interval_ms - elapsed_ms;
+			//auto interval_ms = duration_cast<milliseconds>(interval);
+			//auto wait = interval_ms - elapsed_ms;
 			std::this_thread::sleep_for(0ms);
 			return;
 		}
