@@ -44,7 +44,7 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
     shape_.setOrigin(
     {
         static_cast<float>(physical_object_.center_of_mass().x()),
-        static_cast<float>(physical_object_.center_of_mass().y())
+        -static_cast<float>(physical_object_.center_of_mass().y())
     });
 
     cof_shape_.setRadius(0.05f);

@@ -21,8 +21,6 @@ physical_object::physical_object(const Vector2d position,
         return current_sum + std::get<0>(p) * std::get<1>(p);
     }) / mass_;
 
-    position_ = position + center_of_mass_;
-
     // inertia
     const auto inertia = std::accumulate(points.begin(), points.end(), 0.0,
         [cof = center_of_mass_](auto current_sum, auto p)
