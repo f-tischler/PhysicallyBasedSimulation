@@ -1,8 +1,6 @@
 #include "physical_object.h"
 #include <numeric>
 
-constexpr auto world_scale = 10; // px = 1m
-
 physical_object::physical_object(const Vector2d position,
     const std::vector<std::tuple<Vector2d, double>>& points)
     : position_(position), rotation_(0), velocity_(0, 0), force_(0, 0), 
@@ -44,8 +42,8 @@ void physical_object::update(const double dt)
 {
     position_ += velocity_ * dt;
 
-    velocity_ += force_ / mass_ * dt * world_scale;
-    rotation_ = Rotation2D(rotation_.angle() + angular_velocity_ * dt * world_scale);
+    velocity_ += force_ / mass_ * dt;
+    rotation_ = Rotation2D(rotation_.angle() + angular_velocity_ * dt);
 
     angular_momentum_ += torque_ * dt;
     angular_velocity_ = inverse_inertia_ * angular_momentum_;
