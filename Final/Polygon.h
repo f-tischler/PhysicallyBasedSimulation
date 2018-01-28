@@ -12,8 +12,6 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
-const Vector2 gravity = Vector2(0, -9.81);
-
 constexpr auto screen_scale = 10; // px = 1m
 
 class polygon 
@@ -33,9 +31,6 @@ public:
     physical_object& get_physical_object() { return physical_object_; }
 
     void scale(double dt);
-    void enable();
-
-	bool get_enabled() const { return enabled_; }
 
 	void add_contacts(const std::vector<Vector2>& contacts)
 	{
@@ -69,8 +64,6 @@ private:
     sf::CircleShape cof_shape_;
    
     physical_object physical_object_;
-
-    bool enabled_;
 
     std::vector<Vector2> contacts_;
 

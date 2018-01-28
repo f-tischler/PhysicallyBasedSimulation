@@ -123,7 +123,7 @@ void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contac
 		{
 			auto end_index = (i == shape.get_shape().getPointCount() - 1) ? 0 : i + 1;
 
-			auto start =  as_world_coordinates(transform *shape.get_shape().getPoint(i));
+			auto start = as_world_coordinates(transform * shape.get_shape().getPoint(i));
 			auto end = as_world_coordinates(transform * shape.get_shape().getPoint(end_index));
 
 			lines.emplace_back(start, end);
@@ -173,7 +173,8 @@ std::vector<ContactInfo> collision_detection(std::vector<polygon>& polygons)
 			if (&polygon_a == &polygon_b)
 				continue;
 
-			if (!polygon_a.get_enabled() && !polygon_b.get_enabled())
+			if (polygon_a.get_physical_object().get_type() == object_type::fixed &&
+                polygon_b.get_physical_object().get_type() == object_type::fixed)
 				continue;
 
 			ContactInfo info;
@@ -304,13 +305,15 @@ int main()
 
                 polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
                 
+                //auto& polygon = polygons.back();
+
                 /*if(draw_circle)
                     polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
                 else
                     polygons.emplace_back(polygon::create_random(Vector2(xs, ys), 
                         polygon_vertex_count));
 
-                auto& polygon = polygons.back();
+     
                 const auto& shape = polygon.get_shape();
 
                 std::uniform_int_distribution<unsigned> rnd(0, shape.getPointCount() - 1);
@@ -327,7 +330,9 @@ int main()
             {
                 increase_polygon = false;
 
-                polygons.at(polygons.size() - 1).enable();
+                polygons.at(polygons.size() - 1)
+                    .get_physical_object()
+                    .set_type(object_type::dynamic);
 
                 std::cout << polygons.size() << std::endl;
 

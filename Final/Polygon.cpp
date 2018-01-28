@@ -46,7 +46,7 @@ std::vector<std::tuple<Vector2d, double>> create_mass_points(
 }
 
 polygon::polygon(const Vector2& center, std::vector<Vector2> points)
-    : physical_object_(as_world_coordinates(center), create_mass_points(0.5, points)), enabled_(false)
+    : physical_object_(as_world_coordinates(center), create_mass_points(0.5, points))
 {
     shape_.setPointCount(points.size());
 
@@ -79,9 +79,6 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
 
 void polygon::update(const double dt)
 {
-    if (!enabled_) return;
-
-    physical_object_.accelerate({ gravity.x(), gravity.y() });
     physical_object_.update(dt);
 
     update_shapes();
@@ -100,7 +97,8 @@ void polygon::draw(sf::RenderWindow& window) const
     window.draw(shape_);
     window.draw(cof_shape_);
 
-    if (!enabled_) return;
+    if (physical_object_.get_type() == object_type::fixed)
+        return;
 
     // draw contact
     for (auto &contact_point : get_contacts())
@@ -152,11 +150,6 @@ void polygon::set_color(const sf::Color& color)
 
     shape_.setFillColor(dark);
     shape_.setOutlineColor(color);
-}
-
-void polygon::enable()
-{
-    enabled_ = true;
 }
 
 std::ostream& operator<<(std::ostream& os, const polygon& p)

@@ -40,6 +40,13 @@ physical_object::physical_object(const Vector2d position,
 
 void physical_object::update(const double dt)
 {
+    switch (type_)
+    {
+    case object_type::fixed: return;
+    case object_type::dynamic: accelerate(gravity);
+    default: break;
+    }
+
     position_ += velocity_ * dt;
 
     velocity_ += force_ / mass_ * dt;
