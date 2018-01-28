@@ -9,7 +9,11 @@ using Eigen::Vector2d;
 using Eigen::Matrix2d;
 using Rotation2D = Eigen::Rotation2D<double>;
 
+// offset, velocity
+using point_t = std::tuple<Vector2d, Vector2d>;
+
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Vector2d)
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(point_t)
 
 static const Vector2d gravity = { 0, -9.81 };
 
@@ -35,11 +39,17 @@ public:
     Rotation2D rotation() const { return rotation_; }
     Vector2d center_of_mass() const { return center_of_mass_; }
 
+    void set_scale(const double scale) { scale_ = scale; update_points(); }
+    double get_scale() const { return scale_; }
+
     void set_type(const object_type type) { type_ = type; }
     object_type get_type() const { return type_; }
 
+    const std::vector<point_t>& get_points() const { return points_; }
+
 private:
     double mass_;
+    double scale_;
 
     Vector2d center_of_mass_; 
     Vector2d position_;
@@ -53,9 +63,12 @@ private:
     double angular_velocity_;
     double inverse_inertia_;
 
-    std::vector<Vector2d> offsets_;
-    std::vector<Vector2d> velocities_;
+    std::vector<Vector2d> initial_offsets_;
+    std::vector<point_t> points_;
+
     object_type type_ = object_type::fixed;
+
+    void update_points();
 };
 
 #endif // PHYSICAL_OBJECT_H

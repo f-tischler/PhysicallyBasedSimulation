@@ -111,20 +111,26 @@ bool lineSegmentIntersection(
 
 void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contact_points)
 {
-	auto get_points = [](auto shape)
+	auto get_points = [](const physical_object& object)
 	{
 		using line_t = std::tuple<Vector2d, Vector2d>;
 
 		std::vector<line_t> lines;
 
-		const auto transform = shape.get_shape().getTransform();
+        const auto position = 
+            object.position() +
+            object.center_of_mass();
 
-		for (size_t i = 0; i < shape.get_shape().getPointCount(); i++)
-		{
-			auto end_index = (i == shape.get_shape().getPointCount() - 1) ? 0 : i + 1;
+        const auto& points = object.get_points();
 
-			auto start = as_world_coordinates(transform * shape.get_shape().getPoint(i));
-			auto end = as_world_coordinates(transform * shape.get_shape().getPoint(end_index));
+        for (size_t i = 0; i < points.size(); i++)
+        {
+            auto end_index = i == points.size() - 1
+                ? 0
+                : i + 1;
+
+            auto start = position + std::get<0>(points[i]);
+			auto end = position + std::get<0>(points[end_index]);
 
 			lines.emplace_back(start, end);
 		}
@@ -132,8 +138,8 @@ void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contac
 		return lines;
 	};
 
-	auto lines_a = get_points(a);
-	auto lines_b = get_points(b);
+	auto lines_a = get_points(a.get_physical_object());
+	auto lines_b = get_points(b.get_physical_object());
 
 	for (auto& line_a : lines_a)
 	{

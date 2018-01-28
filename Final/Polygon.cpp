@@ -138,6 +138,7 @@ void polygon::scale(const double factor)
         static_cast<float>(factor),
         static_cast<float>(factor));
 
+    physical_object_.set_scale(shape_.getScale().x);
 }
 
 void polygon::set_color(const sf::Color& color)

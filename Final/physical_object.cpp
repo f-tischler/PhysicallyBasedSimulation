@@ -4,7 +4,7 @@
 physical_object::physical_object(const Vector2d position,
     const std::vector<std::tuple<Vector2d, double>>& points)
     : position_(position), rotation_(0), velocity_(0, 0), force_(0, 0), 
-    torque_(0), angular_momentum_(0), velocities_(points.size())
+    torque_(0), angular_momentum_(0), points_(points.size()), scale_(1)
 {
     // total mass
     mass_ = std::accumulate(points.begin(), points.end(), 0.0, 
@@ -27,7 +27,7 @@ physical_object::physical_object(const Vector2d position,
         const Vector2d offset = std::get<0>(p) - cof;
 
         // save offset
-        offsets_.push_back(offset);
+        initial_offsets_.push_back(offset);
 
         return current_sum + std::get<1>(p) * offset.squaredNorm();
     });
@@ -36,6 +36,8 @@ physical_object::physical_object(const Vector2d position,
 
     // initial angular velocity
     angular_velocity_ = inverse_inertia_ * angular_momentum_;
+
+    update_points();
 }
 
 void physical_object::update(const double dt)
@@ -55,21 +57,7 @@ void physical_object::update(const double dt)
     angular_momentum_ += torque_ * dt;
     angular_velocity_ = inverse_inertia_ * angular_momentum_;
 
-    for(auto i = 0u; i < velocities_.size(); ++i)
-    {
-        // transform offset
-        const auto offset = rotation_.toRotationMatrix() * offsets_[i];
-
-        // calculate norm of angular velocity part (v = r * omega)
-        const auto velocity_norm = offset.norm() * angular_velocity_;
-        const auto normalized_offset = offset.normalized();
-
-        velocities_[i] = velocity_ + Vector2d
-        {
-            velocity_norm * normalized_offset.y(),
-            velocity_norm * normalized_offset.x(),
-        };
-    }
+    update_points();
 
     force_ = { 0.0, 0.0 };
     torque_ = 0.0;
@@ -88,4 +76,27 @@ void physical_object::accelerate(const Vector2d point, const Vector2d accelerati
 void physical_object::accelerate(const Vector2d acceleration)
 {
     force_ += acceleration * mass_;
+}
+
+void physical_object::update_points()
+{
+    for (auto i = 0u; i < points_.size(); ++i)
+    {
+        // transform offset
+        const auto offset = rotation_.toRotationMatrix() * initial_offsets_[i] * scale_;
+
+        // calculate norm of angular velocity part (v = r * omega)
+        const auto velocity_norm = offset.norm() * angular_velocity_;
+        const auto normalized_offset = offset.normalized();
+
+        points_[i] =
+        {
+            offset,
+            velocity_ + Vector2d
+            {
+                velocity_norm * normalized_offset.y(),
+                velocity_norm * normalized_offset.x(),
+            }
+        };
+    }
 }

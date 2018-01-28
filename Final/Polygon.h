@@ -28,7 +28,9 @@ public:
     void draw(sf::RenderWindow& window) const;
 
     const sf::Shape& get_shape() const { return shape_; }
+
     physical_object& get_physical_object() { return physical_object_; }
+    const physical_object& get_physical_object() const { return physical_object_; }
 
     void scale(double dt);
 
