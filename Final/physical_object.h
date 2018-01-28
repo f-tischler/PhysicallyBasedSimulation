@@ -1,12 +1,15 @@
 #ifndef PHYSICAL_OBJECT_H
 #define PHYSICAL_OBJECT_H
 
-#include "Eigen/Core"
-#include "Eigen/Geometry"
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <Eigen/StdVector>
 
 using Eigen::Vector2d;
 using Eigen::Matrix2d;
 using Rotation2D = Eigen::Rotation2D<double>;
+
+EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Vector2d)
 
 class physical_object
 {
@@ -37,6 +40,9 @@ private:
     double angular_momentum_;
     double angular_velocity_;
     double inverse_inertia_;
+
+    std::vector<Vector2d> offsets_;
+    std::vector<Vector2d> velocities_;
 };
 
 #endif // PHYSICAL_OBJECT_H

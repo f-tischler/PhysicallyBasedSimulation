@@ -5,7 +5,8 @@ constexpr auto world_scale = 10; // px = 1m
 
 physical_object::physical_object(const Vector2d position,
     const std::vector<std::tuple<Vector2d, double>>& points)
-    : position_(position), rotation_(0), velocity_(0, 0), force_(0, 0), torque_(0), angular_momentum_(0)
+    : position_(position), rotation_(0), velocity_(0, 0), force_(0, 0), 
+    torque_(0), angular_momentum_(0), velocities_(points.size())
 {
     // total mass
     mass_ = std::accumulate(points.begin(), points.end(), 0.0, 
@@ -23,9 +24,13 @@ physical_object::physical_object(const Vector2d position,
 
     // inertia
     const auto inertia = std::accumulate(points.begin(), points.end(), 0.0,
-        [cof = center_of_mass_](auto current_sum, auto p)
+        [cof = center_of_mass_, this](auto current_sum, auto p)
     {
         const Vector2d offset = std::get<0>(p) - cof;
+
+        // save offset
+        offsets_.push_back(offset);
+
         return current_sum + std::get<1>(p) * offset.squaredNorm();
     });
 
@@ -44,6 +49,22 @@ void physical_object::update(const double dt)
 
     angular_momentum_ += torque_ * dt;
     angular_velocity_ = inverse_inertia_ * angular_momentum_;
+
+    for(auto i = 0u; i < velocities_.size(); ++i)
+    {
+        // transform offset
+        const auto offset = rotation_.toRotationMatrix() * offsets_[i];
+
+        // calculate norm of angular velocity part (v = r * omega)
+        const auto velocity_norm = offset.norm() * angular_velocity_;
+        const auto normalized_offset = offset.normalized();
+
+        velocities_[i] = velocity_ + Vector2d
+        {
+            velocity_norm * normalized_offset.y(),
+            velocity_norm * normalized_offset.x(),
+        };
+    }
 
     force_ = { 0.0, 0.0 };
     torque_ = 0.0;
