@@ -47,3 +47,5 @@ cmake-build-debug/
 
 Final/SFML-2.4.2
 Final/.vs
+**/.vs/
+**/CMakeSettings.json

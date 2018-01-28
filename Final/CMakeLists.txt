@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 project(FinalProject LANGUAGES CXX)
 
-set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/modules/" ${CMAKE_MODULE_PATH})
 
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++14 /wd4141")
@@ -11,25 +11,20 @@ else()
 	set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 endif()
 
-set(SOURCE_FILES 
-	${CMAKE_CURRENT_SOURCE_DIR}/Main.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Polygon.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/Console.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ContactInfo.hpp
+file(GLOB SOURCE_FILES
+    "*.h"
+    "*.cpp"
 )
 
 add_executable(FinalProject ${SOURCE_FILES}  ${HEADERS})
 
 target_include_directories(FinalProject PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/modules/" ${CMAKE_MODULE_PATH})
-
 set(SFML_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/SFML-2.4.2)
 
 find_package(SFML 2 REQUIRED network audio graphics window system)
+include_directories(${SFML_INCLUDE_DIR})
+target_link_libraries(FinalProject ${SFML_LIBRARIES} ${SFML_DEPENDENCIES})
 
-
-if(SFML_FOUND)
-	include_directories(${SFML_INCLUDE_DIR})
-	target_link_libraries(FinalProject ${SFML_LIBRARIES} ${SFML_DEPENDENCIES})
-endif()
+find_package(Eigen3 REQUIRED)
+include_directories(${EIGEN3_INCLUDE_DIR})

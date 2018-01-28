@@ -24,6 +24,7 @@
 #include "ContactInfo.hpp"
 #include <thread>
 #include <numeric>
+#include <random>
 
 
 enum class GameLoopType
@@ -39,45 +40,10 @@ enum class GameLoopType
 void render(sf::RenderWindow& window, const std::vector<polygon>& polygons)
 {
     window.clear();
-
-
+    
     for (auto& polygon : polygons)
     {
-        window.draw(polygon.get_shape());
-
-
-		if (polygon.get_enabled())
-		{
-			auto center = polygon.get_center_local();
-			auto center_world = polygon.get_shape().getTransform() * sf::Vector2f(center.x(), center.y());
-
-			// draw center
-			sf::CircleShape circle(1);
-			circle.setPosition({ center_world.x, center_world.y });
-			circle.setFillColor(sf::Color{ 0, 255, 0 });
-			window.draw(circle);
-
-			// draw contact
-			for (auto& contact_point : polygon.get_contacts())
-			{
-				auto contact_f = sf::Vector2f{ (float)contact_point.x(), (float)contact_point.y() };
-
-				sf::CircleShape circle(3);
-				circle.setPosition(contact_f);
-				circle.setFillColor(sf::Color{ 255, 0, 255 });
-				window.draw(circle);
-
-				auto direction = contact_f - center_world;
-
-				sf::Vertex line[] =
-				{
-					sf::Vertex(center_world, sf::Color{ 255,0,255 }),
-					sf::Vertex(center_world + direction, sf::Color{ 255,0,255 })
-				};
-
-				window.draw(line, 2, sf::Lines);
-			}
-		}
+        polygon.draw(window);
     }
 
 	Console::instance().print(window);
@@ -147,17 +113,20 @@ void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contac
 {
 	auto get_points = [](auto shape)
 	{
-		using line_t = std::tuple<sf::Vector2f, sf::Vector2f>;
+		using line_t = std::tuple<Vector2d, Vector2d>;
+
 		std::vector<line_t> lines;
-		auto transform = shape.get_shape().getTransform();
+
+		const auto transform = shape.get_shape().getTransform();
+
 		for (size_t i = 0; i < shape.get_shape().getPointCount(); i++)
 		{
 			auto end_index = (i == shape.get_shape().getPointCount() - 1) ? 0 : i + 1;
 
-			auto start = transform * shape.get_shape().getPoint(i);
-			auto end = transform * shape.get_shape().getPoint(end_index);
+			auto start =  as_world_coordinates(transform *shape.get_shape().getPoint(i));
+			auto end = as_world_coordinates(transform * shape.get_shape().getPoint(end_index));
 
-			lines.push_back(line_t{ start, end });
+			lines.emplace_back(start, end);
 		}
 
 		return lines;
@@ -170,24 +139,23 @@ void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contac
 	{
 		for (auto& line_b : lines_b)
 		{
-			auto x1 = std::get<0>(line_a).x;
-			auto y1 = std::get<0>(line_a).y;
+			auto x1 = std::get<0>(line_a).x();
+			auto y1 = std::get<0>(line_a).y();
 
-			auto x2 = std::get<1>(line_a).x;
-			auto y2 = std::get<1>(line_a).y;
+			auto x2 = std::get<1>(line_a).x();
+			auto y2 = std::get<1>(line_a).y();
 
+			auto x3 = std::get<0>(line_b).x();
+			auto y3 = std::get<0>(line_b).y();
 
-			auto x3 = std::get<0>(line_b).x;
-			auto y3 = std::get<0>(line_b).y;
-
-			auto x4 = std::get<1>(line_b).x;
-			auto y4 = std::get<1>(line_b).y;
+			auto x4 = std::get<1>(line_b).x();
+			auto y4 = std::get<1>(line_b).y();
 
 			double ix, iy;
-			auto hit = lineSegmentIntersection(x1, y1, x2, y2, x3, y3, x4, y4, ix, iy);
+			if(!lineSegmentIntersection(x1, y1, x2, y2, x3, y3, x4, y4, ix, iy))
+                continue;
 
-			if(hit)
-				contact_points.emplace_back(ix, iy);
+			contact_points.emplace_back(ix, iy);
 		}
 	}
 }
@@ -312,6 +280,8 @@ int main()
 		Console::instance().set_param(name, smoother.get());
 	};
 
+    std::default_random_engine rng;
+
     auto process_events = [&]()
     {
         sf::Event event;
@@ -333,6 +303,21 @@ int main()
                 Vector2(xs, ys), polygon_vertex_count));*/
 
                 polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
+                
+                /*if(draw_circle)
+                    polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
+                else
+                    polygons.emplace_back(polygon::create_random(Vector2(xs, ys), 
+                        polygon_vertex_count));
+
+                auto& polygon = polygons.back();
+                const auto& shape = polygon.get_shape();
+
+                std::uniform_int_distribution<unsigned> rnd(0, shape.getPointCount() - 1);
+                const auto random_point = polygon.get_shape().getPoint(rnd(rng));
+
+                polygons.back().get_physical_object().accelerate(
+                    as_world_coordinates(random_point), { 0, 15.0f });*/
 
                 increase_polygon = true;
 
@@ -358,7 +343,7 @@ int main()
 
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::G))
 				{
-					game_loop_type = (GameLoopType)(((int)game_loop_type) + 1);
+					game_loop_type = static_cast<GameLoopType>(static_cast<int>(game_loop_type) + 1);
 					if (game_loop_type == GameLoopType::Unkown)
 						game_loop_type = GameLoopType::Fixed;
 
@@ -394,8 +379,8 @@ int main()
 
 		if (elapsed_ms < interval)
 		{
-			auto interval_ms = duration_cast<milliseconds>(interval);
-			auto wait = interval_ms - elapsed_ms;
+			//auto interval_ms = duration_cast<milliseconds>(interval);
+			//auto wait = interval_ms - elapsed_ms;
 			std::this_thread::sleep_for(0ms);
 			return;
 		}
@@ -408,7 +393,7 @@ int main()
 		{
 			if (increase_polygon)
 			{
-				polygons.back().increase(1 + interval.count() * 2);
+				polygons.back().scale(1 + interval.count() * 2);
 			}
 
 			measure("Update", update_time_smooth, [&]
@@ -435,7 +420,7 @@ int main()
 		process_events();
 
 		if (increase_polygon)
-			polygons.back().increase(1 + elapsed_s.count() * 2);
+			polygons.back().scale(1 + elapsed_s.count() * 2);
 
 
 		measure("Update", update_time_smooth, [&]
