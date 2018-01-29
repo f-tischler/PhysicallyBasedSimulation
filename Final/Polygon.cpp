@@ -245,7 +245,7 @@ polygon polygon::create_random(const Vector2 center, const size_t vertex_count)
 {
     const auto angle = 2 * M_PI / vertex_count;
 
-    const std::uniform_real_distribution<double> rnd(
+    std::uniform_real_distribution<double> rnd(
         -angle / vertex_count, angle / vertex_count);
 
     std::vector<Vector2> points;
