@@ -41,6 +41,7 @@ public:
     void add_force(Vector2d force);
     void add_linear_velocity(const Vector2d v) { velocity_ += v; update_points(); }
     void add_angular_velocity(const double v) { angular_velocity_ += v; update_points(); }
+	void add_torque(const double v) { torque_ += v; update_points(); }
 
     Vector2d position() const { return position_; }
     Rotation2D rotation() const { return rotation_; }

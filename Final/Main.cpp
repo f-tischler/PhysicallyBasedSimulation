@@ -308,13 +308,40 @@ void collision_resolution(const std::vector<contact_info>& contacts)
             / (normal.dot(normal) * (a.inverse_mass() + b.inverse_mass() + t_a + t_b));
         
         const auto impulse = j * normal;
-
-        a.add_angular_velocity( a.inverse_inertia() * cross2(a_point_offset, impulse));
-        b.add_angular_velocity( b.inverse_inertia() * cross2(b_point_offset, -impulse));
         /* */
 
         a.add_linear_velocity( impulse * a.inverse_mass());
         b.add_linear_velocity(-impulse * b.inverse_mass());
+
+
+
+		auto apply_torque = [&contact](const Eigen::Vector2d& impulse, physical_object& obj)
+		{
+			auto center_global = obj.center_of_mass_global();
+			auto my_impulse = -impulse;
+
+			Eigen::Vector2d intersection_to_center = obj.center_of_mass_global() - contact.point_of_intersection;
+			auto intersection_normal = Eigen::Vector2d(-intersection_to_center.y(), intersection_to_center.x()).normalized();
+
+			// project impulse onto normal
+			auto dot_ab = my_impulse.dot(intersection_normal);
+			auto cos_theta = dot_ab / (my_impulse.norm() * intersection_normal.norm());
+			Eigen::Vector2d projected_impulse = (my_impulse.norm() * cos_theta) * intersection_normal;
+
+			// torque = levearge * proj_impulse
+			auto leverage = intersection_to_center.norm();
+			auto torque = leverage * projected_impulse.norm();
+
+			auto direction = projected_impulse.x() > 0.0f ? -1.0f : 1.0f;
+			if (torque > 0.0f)
+				obj.add_torque(torque * direction);
+		};
+
+		if (a.get_type() != object_type::fixed)
+			apply_torque(impulse, a);
+
+		if (b.get_type() != object_type::fixed)
+			apply_torque(-impulse, b);
 
         // positional correction
         const auto percent = 0.2; // usually 20% to 80%
