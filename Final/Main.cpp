@@ -225,9 +225,41 @@ std::vector<contact_info> collision_detection(std::vector<polygon>& polygons)
 	return global_contacts;
 }
 
-void collision_resolution(const std::vector<ContactInfo>& contacts)
+void collision_resolution(const std::vector<contact_info>& contacts)
 {
-	
+    for (const auto& contact : contacts)
+    {
+        const auto line_start = std::get<0>(std::get<0>(contact.line));
+        const auto line_end = std::get<0>(std::get<1>(contact.line));
+
+        const auto normal = Vector2d(
+            -(line_end - line_start).y(),
+            (line_end - line_start).x()
+        ).normalized();
+
+        auto& a = contact.line_owner;
+        auto& b = contact.point_owner;
+
+        constexpr auto e = 0.99;
+
+        const auto relative_linear_velocity = 
+            (a.linear_velocity() - b.linear_velocity()).dot(normal);
+
+        //if(relative_linear_velocity < 0)
+        //    continue;
+
+        const auto j = -(1 + e) * relative_linear_velocity /
+            (normal.dot(normal) * (a.inverse_mass() + b.inverse_mass()));
+
+        const auto impulse = j * normal;
+
+        const auto total_mass = a.mass() + b.mass();
+
+        assert(total_mass > 0);
+
+        a.add_linear_velocity(impulse * a.inverse_mass() * a.mass() / total_mass);
+        b.add_linear_velocity(-impulse * b.inverse_mass() * b.mass() / total_mass);
+    }
 }
 
 void update(std::vector<polygon>& polygons, const double dt)
@@ -285,7 +317,7 @@ int main()
 		func();
 
 		auto elapsed_s = duration<double>{ clock::now() - start_frame };
-		smoother.add(1.0 / elapsed_s.count());
+		smoother.add(elapsed_s.count());
 		Console::instance().set_param(name, smoother.get());
 	};
 

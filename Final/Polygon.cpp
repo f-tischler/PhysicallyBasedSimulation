@@ -120,9 +120,6 @@ void polygon::draw(sf::RenderWindow& window) const
 
         window.draw(line, 2, sf::Lines);
 
-        const auto position_line_owner = contact.line_owner.center_of_mass_global();
-        const auto position_point_owner = contact.line_owner.center_of_mass_global();
-
         const auto line_start = std::get<0>(std::get<0>(contact.line));
         const auto line_end = std::get<0>(std::get<1>(contact.line));
 
@@ -134,7 +131,7 @@ void polygon::draw(sf::RenderWindow& window) const
         sf::Vertex normal_line[] =
         {
             sf::Vertex(as_screen_coordinates(point), sf::Color{ 255, 127, 0 }),
-            sf::Vertex(as_screen_coordinates(point + normal * 5), sf::Color{ 255, 127, 0 })
+            sf::Vertex(as_screen_coordinates(point + normal * 0.5), sf::Color{ 255, 127, 0 })
         };
 
         window.draw(normal_line, 2, sf::Lines);
@@ -224,7 +221,7 @@ polygon polygon::create_line(const Vector2 start, const Vector2 end)
 
 polygon polygon::create_circle(const Vector2 center, const double radius)
 {
-    constexpr auto vertex_count = 100;
+    constexpr auto vertex_count = 20;
 
     const auto angle = 360.0 / vertex_count;
 

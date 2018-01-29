@@ -33,23 +33,46 @@ public:
 
     void update(const double dt);
     void accelerate(Vector2d point, Vector2d acceleration);
-    void accelerate(Vector2d force);
+    void accelerate(Vector2d acceleration);
+    void add_force(Vector2d force);
 
     Vector2d position() const { return position_; }
     Rotation2D rotation() const { return rotation_; }
+    Vector2d linear_velocity() const { return velocity_; }
+    void add_linear_velocity(const Vector2d v) { velocity_ += v; }
+
+    double mass() const 
+    { 
+        return type_ == object_type::fixed
+        ? 0
+        : mass_; 
+    }
+
+    double inverse_mass() const
+    {
+        return type_ == object_type::fixed
+            ? 0
+            : 1.0 / mass_;
+    }
 
     Vector2d center_of_mass_local() const { return center_of_mass_; }
     Vector2d center_of_mass_global() const { return position_ + center_of_mass_; }
 
     double bounding_radius() const { return radius_; }
 
-    void set_scale(const double scale) { scale_ = scale; update_points(); }
+    void set_scale(const double scale)
+    {
+        scale_ = scale; 
+        update_points();
+    }
+
     double get_scale() const { return scale_; }
 
     void set_type(const object_type type) { type_ = type; }
     object_type get_type() const { return type_; }
 
     const std::vector<point_t>& points() const { return points_; }
+
 
 private:
     double mass_;

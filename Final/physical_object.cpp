@@ -49,9 +49,11 @@ void physical_object::update(const double dt)
     default: break;
     }
 
+    const auto scaled_mass = mass_ * scale_;
+
     position_ += velocity_ * dt;
 
-    velocity_ += force_ / mass_ * dt;
+    velocity_ += force_ / scaled_mass * dt;
     rotation_ = Rotation2D(rotation_.angle() + angular_velocity_ * dt);
 
     angular_momentum_ += torque_ * dt;
@@ -76,6 +78,11 @@ void physical_object::accelerate(const Vector2d point, const Vector2d accelerati
 void physical_object::accelerate(const Vector2d acceleration)
 {
     force_ += acceleration * mass_;
+}
+
+void physical_object::add_force(Vector2d force)
+{
+    force_ += force;
 }
 
 void physical_object::update_points()
