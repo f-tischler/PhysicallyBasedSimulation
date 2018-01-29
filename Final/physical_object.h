@@ -49,7 +49,7 @@ public:
     void set_type(const object_type type) { type_ = type; }
     object_type get_type() const { return type_; }
 
-    const std::vector<point_t>& get_points() const { return points_; }
+    const std::vector<point_t>& points() const { return points_; }
 
 private:
     double mass_;

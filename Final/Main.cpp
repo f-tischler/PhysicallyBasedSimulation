@@ -103,19 +103,13 @@ bool lineSegmentIntersection(
 }
 
 
-void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contact_points)
+void find_intersections(physical_object& object_a, physical_object& object_b, std::vector<contact_info>& contacts)
 {
-	const auto get_points = [](const physical_object& object)
-	{
-		using line_t = std::tuple<Vector2d, Vector2d>;
+    const auto get_lines = [](const physical_object& object)
+    {
+        std::vector<line_t> lines;
 
-		std::vector<line_t> lines;
-
-        const auto position = 
-            object.position() +
-            object.center_of_mass_local();
-
-        const auto& points = object.get_points();
+        const auto& points = object.points();
 
         for (size_t i = 0; i < points.size(); i++)
         {
@@ -123,83 +117,112 @@ void intersects(const polygon& a, const polygon& b, std::vector<Vector2>& contac
                 ? 0
                 : i + 1;
 
-            auto start = position + std::get<0>(points[i]);
-			auto end = position + std::get<0>(points[end_index]);
+            lines.emplace_back(points[i], points[end_index]);
+        }
 
-			lines.emplace_back(start, end);
-		}
+        return lines;
+    };
 
-		return lines;
-	};
+    const auto points_a = object_a.points();
+    const auto lines_b = get_lines(object_b);
 
-    const auto& object_a = a.get_physical_object();
-    const auto& object_b = b.get_physical_object();
+    const auto position_a = object_a.position();
+    const auto position_b = object_b.position();
 
-    if ((object_a.center_of_mass_global() -
-        object_b.center_of_mass_global()).norm() >
-        object_a.bounding_radius() +
-        object_b.bounding_radius())
-        return;
+    for (const auto& point_a : points_a)
+    {
+        line_t line;
+        auto intersections = 0;
+        auto distance = std::numeric_limits<double>::max();
 
-	auto lines_a = get_points(object_a);
-	auto lines_b = get_points(object_b);
+        for (const auto& line_b : lines_b)
+        {
+            const auto x1 = position_a.x() + std::get<0>(point_a).x();
+            const auto y1 = position_a.y() + std::get<0>(point_a).y();
 
-	for (auto& line_a : lines_a)
-	{
-		for (auto& line_b : lines_b)
-		{
-			auto x1 = std::get<0>(line_a).x();
-			auto y1 = std::get<0>(line_a).y();
+            const auto x2 = position_a.x() + std::get<0>(point_a).x() * 100000.0;
+            const auto y2 = position_a.y() + std::get<0>(point_a).y() * 100000.0;
 
-			auto x2 = std::get<1>(line_a).x();
-			auto y2 = std::get<1>(line_a).y();
+            const auto x3 = position_b.x() + std::get<0>(std::get<0>(line_b)).x();
+            const auto y3 = position_b.y() + std::get<0>(std::get<0>(line_b)).y();
 
-			auto x3 = std::get<0>(line_b).x();
-			auto y3 = std::get<0>(line_b).y();
+            const auto x4 = position_b.x() + std::get<0>(std::get<1>(line_b)).x();
+            const auto y4 = position_b.y() + std::get<0>(std::get<1>(line_b)).y();
 
-			auto x4 = std::get<1>(line_b).x();
-			auto y4 = std::get<1>(line_b).y();
-
-			double ix, iy;
-			if(!lineSegmentIntersection(x1, y1, x2, y2, x3, y3, x4, y4, ix, iy))
+            double ix, iy;
+            if (!lineSegmentIntersection(x1, y1, x2, y2, x3, y3, x4, y4, ix, iy))
                 continue;
 
-			contact_points.emplace_back(ix, iy);
-		}
-	}
+            ++intersections;
+
+            const auto current_distance = 
+                (Vector2d(ix, iy) - Vector2d(x1, y2)).norm();
+
+            if (current_distance >= distance)
+                continue;
+
+            distance = current_distance;
+            line = line_b;
+        }
+
+        if (intersections % 2 == 0) continue;
+
+        contacts.emplace_back(object_a, point_a, object_b, line);
+    }
 }
 
-std::vector<ContactInfo> collision_detection(std::vector<polygon>& polygons)
+bool intersects(physical_object& a, physical_object& b, std::vector<contact_info>& contacts)
 {
-	std::vector<ContactInfo> constacts;
-	for (auto& polygon_a : polygons)
+    if ((a.center_of_mass_global() -
+        b.center_of_mass_global()).norm() >
+        a.bounding_radius() +
+        b.bounding_radius())
+        return false;
+
+    find_intersections(a, b, contacts);
+    find_intersections(b, a, contacts);
+
+    return !contacts.empty();
+}
+
+std::vector<contact_info> collision_detection(std::vector<polygon>& polygons)
+{
+    for (auto& polygon_a : polygons)
+    {
+        polygon_a.clear_contacts();
+    }
+
+	std::vector<contact_info> global_contacts;
+	for (auto i = 0u; i < polygons.size(); ++i)
 	{
-		polygon_a.clear_contacts();
+        auto& polygon_a = polygons[i];
 
-		for (auto& polygon_b : polygons)
+		for (auto j = i + 1; j < polygons.size(); ++j)
 		{
-			if (&polygon_a == &polygon_b)
+            auto& polygon_b = polygons[j];
+
+            auto& object_a = polygon_a.get_physical_object();
+            auto& object_b = polygon_b.get_physical_object();
+
+			if (object_a.get_type() == object_type::fixed &&
+                object_b.get_type() == object_type::fixed)
 				continue;
 
-			if (polygon_a.get_physical_object().get_type() == object_type::fixed &&
-                polygon_b.get_physical_object().get_type() == object_type::fixed)
-				continue;
+            std::vector<contact_info> local_contacts;
+            if (!intersects(object_a, object_b, local_contacts))
+                continue;
 
-			ContactInfo info;
-			intersects(polygon_a, polygon_b, info.contact_points);
-			if (!info.contact_points.empty())
-			{
-				polygon_a.add_contacts(info.contact_points);
-				polygon_b.add_contacts(info.contact_points);
+            polygon_a.add_contacts(local_contacts);
+			polygon_b.add_contacts(local_contacts);
 
-				info.a = &polygon_a;
-				info.b = &polygon_b;
-				constacts.push_back(std::move(info));
-			}
+            std::move(
+                local_contacts.begin(), 
+                local_contacts.end(), 
+		        std::back_inserter(global_contacts));
 		}
 	}
 
-	return constacts;
+	return global_contacts;
 }
 
 void collision_resolution(const std::vector<ContactInfo>& contacts)

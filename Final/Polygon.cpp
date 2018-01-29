@@ -98,33 +98,46 @@ void polygon::draw(sf::RenderWindow& window) const
     window.draw(shape_);
     window.draw(cof_shape_);
 
-    if (physical_object_.get_type() == object_type::fixed)
-        return;
-
     // draw contact
-    for (auto &contact_point : get_contacts())
+    for (const auto& contact : contacts_)
     {
-        const Vector2d contact = 
-        {
-            static_cast<float>(contact_point.x()),
-            static_cast<float>(contact_point.y())
-        };
+        const auto center = physical_object_.center_of_mass_global();
 
+        const auto point = center + std::get<0>(contact.point);
+        
         sf::CircleShape circle(3);
-        circle.setPosition(as_screen_coordinates(contact));
+        circle.setPosition(as_screen_coordinates(point));
         circle.setFillColor(sf::Color{255, 0, 255});
         window.draw(circle);
-
-        const auto center = physical_object_.center_of_mass_global();
-        const auto direction = contact - center;
+        
+        const auto direction = point - center;
 
         sf::Vertex line[] =
         {
             sf::Vertex(as_screen_coordinates(center), sf::Color{255, 0, 255}),
-            sf::Vertex(as_screen_coordinates(center + direction), sf::Color{255, 0, 255}
-        )};
+            sf::Vertex(as_screen_coordinates(center + direction), sf::Color{255, 0, 255})
+        };
 
         window.draw(line, 2, sf::Lines);
+
+        const auto position_line_owner = contact.line_owner.center_of_mass_global();
+        const auto position_point_owner = contact.line_owner.center_of_mass_global();
+
+        const auto line_start = std::get<0>(std::get<0>(contact.line));
+        const auto line_end = std::get<0>(std::get<1>(contact.line));
+
+        const auto normal = Vector2d(
+            -(line_end - line_start).y(),
+            (line_end - line_start).x()
+        ).normalized();
+
+        sf::Vertex normal_line[] =
+        {
+            sf::Vertex(as_screen_coordinates(point), sf::Color{ 255, 127, 0 }),
+            sf::Vertex(as_screen_coordinates(point + normal * 5), sf::Color{ 255, 127, 0 })
+        };
+
+        window.draw(normal_line, 2, sf::Lines);
     }
 }
 

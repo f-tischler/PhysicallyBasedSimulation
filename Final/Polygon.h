@@ -11,6 +11,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include "ContactInfo.hpp"
 
 constexpr auto screen_scale = 10; // px = 1m
 
@@ -34,20 +35,20 @@ public:
 
     void scale(double dt);
 
-	void add_contacts(const std::vector<Vector2>& contacts)
+	void add_contacts(const std::vector<contact_info>& contacts)
 	{
-		for (auto& contact : contacts)
-			contacts_.push_back(contact);
+        for (auto& contact : contacts)
+        {
+            if(&contact.point_owner != &physical_object_) 
+                continue;
+
+            contacts_.push_back(contact);
+        }
 	}
 
 	void clear_contacts() 
 	{
 		contacts_.clear();
-	}
-
-	const std::vector<Vector2>& get_contacts() const
-	{
-		return contacts_;
 	}
 
 	const Vector2& get_center_local() const
@@ -67,7 +68,7 @@ private:
    
     physical_object physical_object_;
 
-    std::vector<Vector2> contacts_;
+    std::vector<contact_info> contacts_;
 
     void update_shapes();
     void set_color(const sf::Color& color);
