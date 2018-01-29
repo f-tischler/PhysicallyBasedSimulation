@@ -41,6 +41,11 @@ public:
     Vector2d linear_velocity() const { return velocity_; }
     void add_linear_velocity(const Vector2d v) { velocity_ += v; }
 
+    double get_torque() const { return torque_; }
+    double get_angular_momentum() const { return angular_momentum_; }
+    double get_angular_velocity() const { return angular_velocity_; }
+    double get_inverse_inertia() const { return inverse_inertia_; }
+
     double mass() const 
     { 
         return type_ == object_type::fixed

@@ -102,9 +102,9 @@ bool lineSegmentIntersection(
 	return true;
 }
 
-bool inside(const Vector2d point, 
-    const Vector2d point_offset, 
-    const std::vector<line_t>& lines, 
+bool inside(const Vector2d point,
+    const Vector2d point_offset,
+    const std::vector<line_t>& lines,
     const Vector2d line_offset)
 {
     auto intersections = 0;
@@ -278,6 +278,12 @@ void collision_resolution(const std::vector<contact_info>& contacts)
 
         const auto relative_linear_velocity = 
             (a.linear_velocity() - b.linear_velocity()).dot(normal);
+
+        const auto angular_part = normal.cross(a.get_inverse_inertia() * a
+                                                                     .bounding_radius());
+
+
+
 
         //if(relative_linear_velocity < 0)
         //    continue;
