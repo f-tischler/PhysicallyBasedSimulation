@@ -64,7 +64,7 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
 
     const auto cof = as_screen_coordinates(physical_object_.center_of_mass_local());
 
-    shape_.setOutlineThickness(-0.05);
+    shape_.setOutlineThickness(-0.05f);
     shape_.setOrigin(cof);
 
     cof_shape_.setFillColor(sf::Color::Yellow);
