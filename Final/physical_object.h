@@ -72,6 +72,7 @@ public:
     object_type get_type() const { return type_; }
 
     const std::vector<point_t>& points() const { return points_; }
+    void move(const Vector2d& v) { position_ += v; }
 
 
 private:

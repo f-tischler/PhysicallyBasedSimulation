@@ -105,9 +105,14 @@ void polygon::draw(sf::RenderWindow& window) const
 
         const auto point = center + std::get<0>(contact.point);
         
-        sf::CircleShape circle(3);
+        sf::CircleShape circle(1);
         circle.setPosition(as_screen_coordinates(point));
         circle.setFillColor(sf::Color{255, 0, 255});
+        circle.setOrigin(circle.getRadius(), circle.getRadius());
+        window.draw(circle);
+
+        circle.setPosition(as_screen_coordinates(contact.point_of_intersection));
+        circle.setFillColor(sf::Color{ 255, 255, 255 });
         window.draw(circle);
         
         const auto direction = point - center;
@@ -131,7 +136,7 @@ void polygon::draw(sf::RenderWindow& window) const
         sf::Vertex normal_line[] =
         {
             sf::Vertex(as_screen_coordinates(point), sf::Color{ 255, 127, 0 }),
-            sf::Vertex(as_screen_coordinates(point + normal * 0.5), sf::Color{ 255, 127, 0 })
+            sf::Vertex(as_screen_coordinates(point + normal * 0.3), sf::Color{ 255, 127, 0 })
         };
 
         window.draw(normal_line, 2, sf::Lines);

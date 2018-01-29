@@ -70,14 +70,14 @@ void physical_object::accelerate(const Vector2d point, const Vector2d accelerati
     accelerate(acceleration);
 
     const auto offset = point - center_of_mass_;
-    const auto force = acceleration * mass_;
+    const auto force = acceleration * mass_ * scale_;
 
     torque_ += offset.x() * force.y() - force.x() * offset.y();
 }
 
 void physical_object::accelerate(const Vector2d acceleration)
 {
-    force_ += acceleration * mass_;
+    force_ += acceleration * mass_ * scale_;
 }
 
 void physical_object::add_force(Vector2d force)

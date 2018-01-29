@@ -102,6 +102,36 @@ bool lineSegmentIntersection(
 	return true;
 }
 
+bool inside(const Vector2d point, 
+    const Vector2d point_offset, 
+    const std::vector<line_t>& lines, 
+    const Vector2d line_offset)
+{
+    auto intersections = 0;
+
+    for (const auto& line_b : lines)
+    {
+        const auto x1 = point_offset.x() + point.x();
+        const auto y1 = point_offset.y() + point.y();
+
+        const auto x2 = point_offset.x() + point.x() * 100000.0;
+        const auto y2 = point_offset.y() + point.y() * 100000.0;
+
+        const auto x3 = line_offset.x() + std::get<0>(std::get<0>(line_b)).x();
+        const auto y3 = line_offset.y() + std::get<0>(std::get<0>(line_b)).y();
+
+        const auto x4 = line_offset.x() + std::get<0>(std::get<1>(line_b)).x();
+        const auto y4 = line_offset.y() + std::get<0>(std::get<1>(line_b)).y();
+
+        double ix, iy;
+        if (!lineSegmentIntersection(x1, y1, x2, y2, x3, y3, x4, y4, ix, iy))
+            continue;
+
+        ++intersections;
+    }
+
+    return intersections % 2 == 1;
+}
 
 void find_intersections(physical_object& object_a, physical_object& object_b, std::vector<contact_info>& contacts)
 {
@@ -131,43 +161,50 @@ void find_intersections(physical_object& object_a, physical_object& object_b, st
 
     for (const auto& point_a : points_a)
     {
+        const auto point = std::get<0>(point_a);
+
+        if (!inside(point, position_a, lines_b, position_b))
+            continue;
+
         line_t line;
-        auto intersections = 0;
         auto distance = std::numeric_limits<double>::max();
+        auto penetration_depth = 0.0;
+        Vector2d point_of_intersection;
 
         for (const auto& line_b : lines_b)
         {
-            const auto x1 = position_a.x() + std::get<0>(point_a).x();
-            const auto y1 = position_a.y() + std::get<0>(point_a).y();
+            const auto line_start = position_b + std::get<0>(std::get<0>(line_b));
+            const auto line_end = position_b + std::get<0>(std::get<1>(line_b));
 
-            const auto x2 = position_a.x() + std::get<0>(point_a).x() * 100000.0;
-            const auto y2 = position_a.y() + std::get<0>(point_a).y() * 100000.0;
+            const auto x1 = position_a.x();
+            const auto y1 = position_a.y();
 
-            const auto x3 = position_b.x() + std::get<0>(std::get<0>(line_b)).x();
-            const auto y3 = position_b.y() + std::get<0>(std::get<0>(line_b)).y();
+            const auto x2 = position_a.x() + point.x();
+            const auto y2 = position_a.y() + point.y();
 
-            const auto x4 = position_b.x() + std::get<0>(std::get<1>(line_b)).x();
-            const auto y4 = position_b.y() + std::get<0>(std::get<1>(line_b)).y();
+            const auto x3 = line_start.x();
+            const auto y3 = line_start.y();
+
+            const auto x4 = line_end.x();
+            const auto y4 = line_end.y();
 
             double ix, iy;
             if (!lineSegmentIntersection(x1, y1, x2, y2, x3, y3, x4, y4, ix, iy))
                 continue;
 
-            ++intersections;
-
             const auto current_distance = 
-                (Vector2d(ix, iy) - Vector2d(x1, y2)).norm();
+                (Vector2d(x2, y2)-Vector2d(ix, iy)).norm();
 
             if (current_distance >= distance)
                 continue;
 
             distance = current_distance;
             line = line_b;
+            penetration_depth = current_distance;
+            point_of_intersection = Vector2d(ix, iy);
         }
 
-        if (intersections % 2 == 0) continue;
-
-        contacts.emplace_back(object_a, point_a, object_b, line);
+        contacts.emplace_back(object_a, point_a, object_b, line, penetration_depth, point_of_intersection);
     }
 }
 
@@ -232,15 +269,12 @@ void collision_resolution(const std::vector<contact_info>& contacts)
         const auto line_start = std::get<0>(std::get<0>(contact.line));
         const auto line_end = std::get<0>(std::get<1>(contact.line));
 
-        const auto normal = Vector2d(
-            -(line_end - line_start).y(),
-            (line_end - line_start).x()
-        ).normalized();
+        const auto normal = ((line_end + line_start) / 2.0).normalized();
 
         auto& a = contact.line_owner;
         auto& b = contact.point_owner;
 
-        constexpr auto e = 0.99;
+        constexpr auto e = 0.5;
 
         const auto relative_linear_velocity = 
             (a.linear_velocity() - b.linear_velocity()).dot(normal);
@@ -257,8 +291,18 @@ void collision_resolution(const std::vector<contact_info>& contacts)
 
         assert(total_mass > 0);
 
-        a.add_linear_velocity(impulse * a.inverse_mass() * a.mass() / total_mass);
-        b.add_linear_velocity(-impulse * b.inverse_mass() * b.mass() / total_mass);
+        a.add_linear_velocity(impulse * a.inverse_mass());
+        b.add_linear_velocity(-impulse * b.inverse_mass());
+
+        // positional correction
+        const auto percent = 0.2; // usually 20% to 80%
+        const auto slop = 0.01; // usually 0.01 to 0.1
+
+        const Vector2d correction = std::max(contact.penetration_depth - slop, 0.0)
+        / (a.inverse_mass() + b.inverse_mass()) * percent * normal;
+
+        a.move(-a.inverse_mass() * correction);
+        b.move(b.inverse_mass() * correction);
     }
 }
 
@@ -285,15 +329,15 @@ int main()
     double xs = 0;
     double ys = 0;
 
-    constexpr auto width = 600;
-    constexpr auto height = 600;
+    constexpr auto width = 1280;
+    constexpr auto height = 800;
 
 	Console::instance().init();
 
     sf::RenderWindow window(sf::VideoMode(width, height), "2D Collision detection");
 
-	polygons.emplace_back(polygon::create_rectangle(Vector2(200, 500), Vector2(300, 50)));
-    polygons.emplace_back(polygon::create_rectangle(Vector2(200, 200), Vector2(300, 50)));
+	polygons.emplace_back(polygon::create_rectangle(Vector2(400, 600), Vector2(500, 80)));
+    polygons.emplace_back(polygon::create_rectangle(Vector2(400, 300), Vector2(500, 80)));
 
     using namespace std::chrono;
     using clock = high_resolution_clock;
@@ -305,8 +349,8 @@ int main()
 
 	auto game_loop_type = GameLoopType::Fixed;
 
-	smoother<double, 100> draw_time_smooth;
-	smoother<double, 100> update_time_smooth;
+	smoother<double, 10> draw_time_smooth;
+	smoother<double, 10> update_time_smooth;
 
     auto last_time = clock::now();
 
@@ -316,8 +360,8 @@ int main()
 
 		func();
 
-		auto elapsed_s = duration<double>{ clock::now() - start_frame };
-		smoother.add(elapsed_s.count());
+		auto elapsed = duration_cast<milliseconds>(clock::now() - start_frame);
+		smoother.add(elapsed.count());
 		Console::instance().set_param(name, smoother.get());
 	};
 
