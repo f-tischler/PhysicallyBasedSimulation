@@ -5,9 +5,6 @@
 #include <vector>
 #include <random>
 
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include "Polygon.h"
 #include <SFML/System/Vector2.hpp>
 
@@ -47,7 +44,7 @@ std::vector<std::tuple<Vector2d, double>> create_mass_points(
 }
 
 polygon::polygon(const Vector2& center, std::vector<Vector2> points)
-    : physical_object_(as_world_coordinates(center), create_mass_points(0.5, points))
+    : physical_object_(as_world_coordinates(center), create_mass_points(0.05, points))
 {
     shape_.setPointCount(points.size());
 
@@ -71,8 +68,8 @@ polygon::polygon(const Vector2& center, std::vector<Vector2> points)
     cof_shape_.setRadius(0.05f);
     cof_shape_.setOrigin(
     { 
-        cof.x + cof_shape_.getRadius(), 
-        cof.y + cof_shape_.getRadius() 
+        cof_shape_.getRadius(), 
+        cof_shape_.getRadius() 
     });
 
     update_shapes();
@@ -87,10 +84,10 @@ void polygon::update(const double dt)
 
 void polygon::update_shapes()
 {
-    shape_.setRotation(static_cast<float>(physical_object_.rotation().angle() * 180 / M_PI));
+    shape_.setRotation(-static_cast<float>(physical_object_.rotation().angle() * 180 / M_PI));
     shape_.setPosition(as_screen_coordinates(physical_object_.position()));
 
-    cof_shape_.setPosition(as_screen_coordinates(physical_object_.position()));
+    cof_shape_.setPosition(as_screen_coordinates(physical_object_.center_of_mass_global()));
 }
 
 void polygon::draw(sf::RenderWindow& window) const
@@ -264,7 +261,7 @@ polygon polygon::create_random(const Vector2 center, const size_t vertex_count)
 
     polygon p(center, points);
 
-    p.scale(5);
+    p.scale(15);
     p.set_color(sf::Color::Green);
 
     return p;

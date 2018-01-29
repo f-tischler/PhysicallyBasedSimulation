@@ -5,7 +5,6 @@
 #ifndef PHYSICALLYBASEDSIMULATION_POLYGON_H
 #define PHYSICALLYBASEDSIMULATION_POLYGON_H
 
-
 #include "Vec2.h"
 #include "physical_object.h"
 
@@ -13,7 +12,7 @@
 #include <vector>
 #include "ContactInfo.hpp"
 
-constexpr auto screen_scale = 30; // px = 1m
+constexpr auto screen_scale = 10; // px = 1m
 
 class polygon 
 {

@@ -5,6 +5,9 @@
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 using Eigen::Vector2d;
 using Eigen::Matrix2d;
 using Rotation2D = Eigen::Rotation2D<double>;
@@ -32,20 +35,27 @@ public:
         const std::vector<std::tuple<Vector2d, double>>& points);
 
     void update(const double dt);
+
     void accelerate(Vector2d point, Vector2d acceleration);
     void accelerate(Vector2d acceleration);
     void add_force(Vector2d force);
+    void add_linear_velocity(const Vector2d v) { velocity_ += v; update_points(); }
+    void add_angular_velocity(const double v) { angular_velocity_ += v; update_points(); }
 
     Vector2d position() const { return position_; }
     Rotation2D rotation() const { return rotation_; }
     Vector2d linear_velocity() const { return velocity_; }
-    void add_linear_velocity(const Vector2d v) { velocity_ += v; }
+    Vector2d center_of_mass_local() const { return center_of_mass_; }
+    Vector2d center_of_mass_global() const { return position_ + center_of_mass_; }
+    double inverse_inertia() const { return inverse_inertia_; }
+    double bounding_radius() const { return radius_; }
+    const std::vector<point_t>& points() const { return points_; }
 
     double mass() const 
     { 
         return type_ == object_type::fixed
         ? 0
-        : mass_; 
+        : mass_;
     }
 
     double inverse_mass() const
@@ -55,27 +65,33 @@ public:
             : 1.0 / mass_;
     }
 
-    Vector2d center_of_mass_local() const { return center_of_mass_; }
-    Vector2d center_of_mass_global() const { return position_ + center_of_mass_; }
-
-    double bounding_radius() const { return radius_; }
-
     void set_scale(const double scale)
     {
         scale_ = scale; 
+        mass_ = initial_mass_ * scale;
+        
+        // updates offsets, inertia 
+        // and bounding radius
         update_points();
     }
-
     double get_scale() const { return scale_; }
 
     void set_type(const object_type type) { type_ = type; }
     object_type get_type() const { return type_; }
 
-    const std::vector<point_t>& points() const { return points_; }
-    void move(const Vector2d& v) { position_ += v; }
+    void move(const Vector2d& v)
+    {
+        position_ += v;
+    }
 
+    void rotate(const double a)
+    {
+        rotation_ = Rotation2D(rotation_.angle() + a);
+        update_points();
+    }
 
 private:
+    double initial_mass_;
     double mass_;
     double scale_;
     double radius_;
@@ -99,5 +115,20 @@ private:
 
     void update_points();
 };
+
+inline double cross2(const Vector2d a, const Vector2d b)
+{
+    return a.x() * b.y() - b.x() * a.y();
+}
+
+inline Vector2d cross2(const Vector2d v, const double s)
+{
+    return { s * v.y(), -s * v.x() };
+}
+
+inline Vector2d cross2(const double s, const Vector2d v)
+{
+    return { -s * v.y(), s * v.x() };
+}
 
 #endif // PHYSICAL_OBJECT_H

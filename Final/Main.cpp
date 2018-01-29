@@ -276,22 +276,44 @@ void collision_resolution(const std::vector<contact_info>& contacts)
 
         constexpr auto e = 0.5;
 
-        const auto relative_linear_velocity = 
+         /*
+        const auto relative_linear_velocity =
             (a.linear_velocity() - b.linear_velocity()).dot(normal);
-
-        //if(relative_linear_velocity < 0)
-        //    continue;
 
         const auto j = -(1 + e) * relative_linear_velocity /
             (normal.dot(normal) * (a.inverse_mass() + b.inverse_mass()));
+        
+      */
+        const auto b_point_offset = std::get<0>(contact.point);
+        const auto b_point_velocity = std::get<1>(contact.point);
 
+        const Vector2d a_point_offset =
+            (std::get<0>(std::get<0>(contact.line)) +
+             std::get<0>(std::get<1>(contact.line))) / 2.0;
+
+        const Vector2d a_point_velocity =
+            (std::get<1>(std::get<0>(contact.line)) +
+             std::get<1>(std::get<1>(contact.line))) / 2.0;
+         
+        const auto relative_velocity =
+            (a_point_velocity - b_point_velocity).dot(normal);
+
+        const auto ra_n = cross2(a_point_offset, normal);
+        const auto rb_n = cross2(b_point_offset, normal);
+
+        const auto t_a = a.inverse_inertia() * ra_n * ra_n;
+        const auto t_b = b.inverse_inertia() * rb_n * rb_n;
+
+        const auto j = -(1 + e) * relative_velocity 
+            / (normal.dot(normal) * (a.inverse_mass() + b.inverse_mass() + t_a + t_b));
+        
         const auto impulse = j * normal;
 
-        const auto total_mass = a.mass() + b.mass();
+        a.add_angular_velocity( a.inverse_inertia() * cross2(a_point_offset, impulse));
+        b.add_angular_velocity( b.inverse_inertia() * cross2(b_point_offset, -impulse));
+        /* */
 
-        assert(total_mass > 0);
-
-        a.add_linear_velocity(impulse * a.inverse_mass());
+        a.add_linear_velocity( impulse * a.inverse_mass());
         b.add_linear_velocity(-impulse * b.inverse_mass());
 
         // positional correction
@@ -384,12 +406,14 @@ int main()
 
             case sf::Event::MouseButtonPressed:
             {
-                /*polygons.emplace_back(polygon::create_random(
-                Vector2(xs, ys), polygon_vertex_count));*/
+                polygons.emplace_back(polygon::create_random(
+                    Vector2(xs, ys), 4));
 
-                polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
+                //polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
                 
-                //auto& polygon = polygons.back();
+                auto& polygon = polygons.back();
+
+                polygon.get_physical_object().rotate(M_PI / 2);
 
                 /*if(draw_circle)
                     polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
