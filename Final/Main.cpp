@@ -37,6 +37,57 @@ enum class GameLoopType
 
 /*----------------------------------------------------------------*/
 
+template<class SmootherType, class FuncType>
+void measure(const std::string name, SmootherType& smoother, const FuncType& func)
+{
+    using namespace std::chrono;
+    using clock = high_resolution_clock;
+
+    const auto start_frame = clock::now();
+
+    func();
+
+    const auto elapsed = duration_cast<milliseconds>(clock::now() - start_frame);
+
+    smoother.add(static_cast<double>(elapsed.count()));
+
+    Console::instance().set_param(name, smoother.get());
+};
+
+template<class FuncType, 
+    typename = std::enable_if_t<std::is_void_v<std::result_of_t<std::decay_t<FuncType>()>>>>
+void measure(const std::string name, const FuncType& func)
+{
+    using namespace std::chrono;
+    using clock = high_resolution_clock;
+
+    const auto start_frame = clock::now();
+
+    func();
+
+    const auto elapsed = duration_cast<milliseconds>(clock::now() - start_frame);
+
+    Console::instance().set_param(name, elapsed.count());
+};
+
+template<class FuncType,
+    typename = std::enable_if_t<!std::is_void_v<std::result_of_t<std::decay_t<FuncType>()>>>>
+auto measure(const std::string name, const FuncType& func)
+{
+    using namespace std::chrono;
+    using clock = high_resolution_clock;
+
+    const auto start_frame = clock::now();
+
+    auto result = func();
+
+    const auto elapsed = duration_cast<milliseconds>(clock::now() - start_frame);
+
+    Console::instance().set_param(name, elapsed.count());
+
+    return result;
+};
+
 void render(sf::RenderWindow& window, const std::vector<polygon>& polygons)
 {
     window.clear();
@@ -359,16 +410,28 @@ void correct_positions(const std::vector<contact_info>& contacts)
 
 void update(std::vector<polygon>& polygons, const double dt)
 {
-	const auto contacts = collision_detection(polygons);
+    auto contacts = measure("Update: Collision Detection", [&]
+    {
+        return collision_detection(polygons);
+    });
 	
-	collision_resolution(contacts);
+    measure("Update: Collision Resolution", [&]
+    {
+	    collision_resolution(contacts);
+    });
 
-	for (auto& polygon : polygons)
-	{
-		polygon.update(dt);
-	}
+    measure("Update: Integration", [&]
+    {
+        for (auto& polygon : polygons)
+        {
+            polygon.update(dt);
+        }
+    });
 
-    correct_positions(contacts);
+    measure("Update: Position Correction", [&]
+    {
+        correct_positions(contacts);
+    });
 }
 
 int main()
@@ -418,17 +481,6 @@ int main()
 	smoother<double, 10> update_time_smooth;
 
     auto last_time = clock::now();
-
-	auto measure = [&](auto name, auto& smoother, auto func) {
-
-		auto start_frame = clock::now();
-
-		func();
-
-		auto elapsed = duration_cast<milliseconds>(clock::now() - start_frame);
-		smoother.add(elapsed.count());
-		Console::instance().set_param(name, smoother.get());
-	};
 
     std::default_random_engine rng;
 

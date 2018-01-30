@@ -109,10 +109,6 @@ void polygon::draw(sf::RenderWindow& window) const
         circle.setOrigin(circle.getRadius(), circle.getRadius());
         window.draw(circle);
 
-        //circle.setPosition(as_screen_coordinates(contact.point_of_intersection));
-        //circle.setFillColor(sf::Color{ 255, 255, 255 });
-        //window.draw(circle);
-
         const auto line_start = std::get<0>(std::get<0>(contact.line));
         const auto line_end = std::get<0>(std::get<1>(contact.line));
 
