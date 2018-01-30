@@ -313,6 +313,27 @@ int main()
                         polygons.back().enable_debug_info(debug);
                     }
                 }
+                if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
+                {
+                    if(create_custom_polygon)
+                    {
+                        create_custom_polygon = false;
+
+                        polygons.emplace_back(
+                                polygon::create_custom(custom_polygon));
+
+                        custom_polygon.clear();
+
+                        polygons.back().get_physical_object
+                                ().rotate(0);
+
+                        polygons.back()
+                                .get_physical_object()
+                                .set_type(object_type::fixed);
+
+                        polygons.back().enable_debug_info(debug);
+                    }
+                }
 
             } break;
 
