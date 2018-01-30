@@ -338,30 +338,34 @@ polygon polygon::create_custom(sf::VertexArray custom_polygon)
 
     std::vector<Vector2d> points(actual_vertex_count);
 
+    Vector2d min = temp_points[0] - center;
+    Vector2d max = temp_points[0] - center;
+
     for (auto i = 0u; i < actual_vertex_count; ++i)
     {
-        points[i] = (temp_points[i] - center);
+        points[i] = temp_points[i] - center;
+
+        if (points[i].squaredNorm() < min.squaredNorm())
+        {
+            min = points[i];
+        }
+
+        if (points[i].squaredNorm() > min.squaredNorm())
+        {
+            max = points[i];
+        }
     }
 
-    auto max = points[0];
+    const auto scale = (max.norm() + min.norm()) / 2.0;
     for (auto i = 0u; i < actual_vertex_count; ++i)
     {
-        if (points[i].squaredNorm() < max.squaredNorm())
-            continue;
-
-        max = points[i];
-    }
-
-    const auto max_norm = max.norm() / 1.7;
-    for (auto i = 0u; i < actual_vertex_count; ++i)
-    {
-        points[i] /= max_norm;
+        points[i] /= scale;
     }
 
 
     polygon p(center, points);
 
-    p.scale(max_norm);
+    p.scale(scale);
     p.set_color(sf::Color::Yellow);
 
     return p;
