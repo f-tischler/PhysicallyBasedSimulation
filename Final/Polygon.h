@@ -14,7 +14,7 @@
 
 constexpr auto screen_scale = 20; // px = 1m
 
-class polygon 
+class polygon
 {
 public:
     polygon(const Vector2& center, std::vector<Vector2> points);
@@ -34,30 +34,33 @@ public:
 
     void scale(double dt);
 
-	void add_contacts(const std::vector<contact_info>& contacts)
-	{
+    void add_contacts(const std::vector<contact_info>& contacts)
+    {
         for (auto& contact : contacts)
         {
-            if(&contact.point_owner != &physical_object_) 
+            if (&contact.point_owner != &physical_object_)
                 continue;
 
             contacts_.push_back(contact);
         }
-	}
+    }
 
-	void clear_contacts() 
-	{
-		contacts_.clear();
-	}
+    void clear_contacts()
+    {
+        contacts_.clear();
+    }
 
-	const Vector2& get_center_local() const
-	{
+    const Vector2& get_center_local() const
+    {
         return
         {
             physical_object_.center_of_mass_local().x(),
             physical_object_.center_of_mass_local().y()
         };
-	}
+    }
+
+    void enable_debug_info(const bool enable) { debug_output_ = enable; }
+    void toggle_debug_info() { debug_output_ = !debug_output_; }
 
     friend std::ostream& operator<<(std::ostream& os, const polygon& p);
 
@@ -66,10 +69,12 @@ private:
     sf::CircleShape cof_shape_;
    
     physical_object physical_object_;
-
     std::vector<contact_info> contacts_;
 
+    bool debug_output_ = false;
+
     void update_shapes();
+    void draw_debug(sf::RenderWindow& window) const;
     void set_color(const sf::Color& color);
 };
 

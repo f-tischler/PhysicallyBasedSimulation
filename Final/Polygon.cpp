@@ -90,23 +90,22 @@ void polygon::update_shapes()
     cof_shape_.setPosition(as_screen_coordinates(physical_object_.center_of_mass_global()));
 }
 
-void polygon::draw(sf::RenderWindow& window) const
+void polygon::draw_debug(sf::RenderWindow& window) const
 {
-    window.draw(shape_);
-    window.draw(cof_shape_);
+    sf::CircleShape circle(2);
 
-    // draw contact
+    circle.setOutlineColor(sf::Color{ 255, 0, 255 });
+    circle.setOutlineThickness(1);
+    circle.setOrigin(circle.getRadius(), circle.getRadius());
+
+    sf::Vertex normal_line[2];
+
     for (const auto& contact : contacts_)
     {
         const auto center = physical_object_.center_of_mass_global();
-
         const auto point = center + std::get<0>(contact.point);
 
-        sf::CircleShape circle(2);
         circle.setPosition(as_screen_coordinates(point));
-        circle.setOutlineColor(sf::Color{ 255, 0, 255 });
-        circle.setOutlineThickness(1);
-        circle.setOrigin(circle.getRadius(), circle.getRadius());
         window.draw(circle);
 
         const auto line_start = std::get<0>(std::get<0>(contact.line));
@@ -114,14 +113,21 @@ void polygon::draw(sf::RenderWindow& window) const
 
         const auto n = normal(line_start, line_end);
 
-        sf::Vertex normal_line[] =
-        {
-            sf::Vertex(as_screen_coordinates(point), sf::Color{ 255, 127, 0 }),
-            sf::Vertex(as_screen_coordinates(point + n), sf::Color{ 255, 127, 0 })
-        };
+        normal_line[0] = sf::Vertex(as_screen_coordinates(point), sf::Color{ 255, 127, 0 });
+        normal_line[1] = sf::Vertex(as_screen_coordinates(point + n), sf::Color{ 255, 127, 0 });
 
         window.draw(normal_line, 2, sf::Lines);
     }
+}
+
+void polygon::draw(sf::RenderWindow& window) const
+{
+    window.draw(shape_);
+    window.draw(cof_shape_);
+
+    if (!debug_output_) return;
+
+    draw_debug(window);
 }
 
 

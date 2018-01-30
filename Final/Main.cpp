@@ -554,9 +554,13 @@ int main()
 					game_loop_type = static_cast<GameLoopType>(static_cast<int>(game_loop_type) + 1);
 					if (game_loop_type == GameLoopType::Unkown)
 						game_loop_type = GameLoopType::Fixed;
-
-
 				}
+
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+                {
+                    for (auto& polygon : polygons)
+                        polygon.toggle_debug_info();
+                }
 
                 /*
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::I))
