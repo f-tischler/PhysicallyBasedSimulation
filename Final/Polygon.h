@@ -24,6 +24,7 @@ public:
 
     void update(const double dt);
     void draw(sf::RenderWindow& window) const;
+    void draw_debug(sf::RenderWindow& window) const;
 
     const sf::Shape& get_shape() const { return shape_; }
 
@@ -31,6 +32,7 @@ public:
     const physical_object& get_physical_object() const { return physical_object_; }
 
     void scale(double dt);
+    void update_color(const sf::Color& color);
 
     void add_contacts(const std::vector<contact_info>& contacts)
     {
@@ -62,8 +64,10 @@ private:
 
     bool debug_output_ = false;
 
+    sf::Color color_;
+
     void update_shapes();
-    void draw_debug(sf::RenderWindow& window) const;
+
     void set_color(const sf::Color& color);
 };
 

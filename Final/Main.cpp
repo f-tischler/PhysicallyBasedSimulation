@@ -40,11 +40,16 @@ enum class game_loop
 
 void render(sf::RenderWindow& window, const std::vector<polygon>& polygons)
 {
-    window.clear();
+    window.clear({10, 10, 20});
     
     for (auto& polygon : polygons)
     {
         polygon.draw(window);
+    }
+
+    for (auto& polygon : polygons)
+    {
+        polygon.draw_debug(window);
     }
 
 	console::instance().print(window);
@@ -86,7 +91,7 @@ int main()
     constexpr auto height = 800;
 
     sf::RenderWindow window(sf::VideoMode(width, height), "2D Collision detection");
-
+   
     std::vector<polygon> polygons;
 
 	polygons.emplace_back(polygon::create_rectangle(Vector2d(400, 700), Vector2d(710, 40)));
@@ -120,7 +125,7 @@ int main()
 
     auto increase_polygon = false;
 
-    auto process_events = [&, xs = 0, ys = 0] () mutable
+    auto process_events = [&, xs = 0, ys = 0, debug = false] () mutable
     {
         sf::Event event;
         while (window.pollEvent(event))
@@ -142,6 +147,8 @@ int main()
 
                 //polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
   
+                polygons.back().enable_debug_info(debug);
+
                 increase_polygon = true;
 
             } break;
@@ -175,8 +182,10 @@ int main()
 
                 if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
                 {
+                    debug = !debug;
+
                     for (auto& polygon : polygons)
-                        polygon.toggle_debug_info();
+                        polygon.enable_debug_info(debug);
                 }
 
             } break;

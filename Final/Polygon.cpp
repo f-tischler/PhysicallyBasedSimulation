@@ -75,6 +75,8 @@ void polygon::update(const double dt)
     physical_object_.update(dt);
 
     update_shapes();
+
+    update_color(color_);
 }
 
 void polygon::update_shapes()
@@ -87,9 +89,14 @@ void polygon::update_shapes()
 
 void polygon::draw_debug(sf::RenderWindow& window) const
 {
+    if (!debug_output_) return;
+
+    window.draw(cof_shape_);
+
     sf::CircleShape circle(2);
 
-    circle.setOutlineColor(sf::Color{ 255, 0, 255 });
+    circle.setOutlineColor(sf::Color{ 255, 127, 0 });
+    circle.setFillColor(sf::Color{ 255, 127, 0 });
     circle.setOutlineThickness(1);
     circle.setOrigin(circle.getRadius(), circle.getRadius());
 
@@ -118,13 +125,7 @@ void polygon::draw_debug(sf::RenderWindow& window) const
 void polygon::draw(sf::RenderWindow& window) const
 {
     window.draw(shape_);
-    window.draw(cof_shape_);
-
-    if (!debug_output_) return;
-
-    draw_debug(window);
 }
-
 
 void polygon::scale(const double factor)
 {
@@ -139,16 +140,58 @@ void polygon::scale(const double factor)
     physical_object_.set_scale(shape_.getScale().x);
 }
 
-void polygon::set_color(const sf::Color& color)
+void polygon::update_color(const sf::Color& color)
 {
+    const sf::Color debug_color = { 100, 100, 100 };
+    const sf::Color debug_color_dark = { 15, 15, 15 };
+    const sf::Color debug_color_light = { 50, 50, 50 };
+
+    if(debug_output_)
+    {
+        switch (physical_object_.get_type())
+        {
+        case object_type::fixed:       
+            shape_.setOutlineColor(debug_color);
+            shape_.setFillColor(debug_color_light);
+            break;
+
+        default:
+            shape_.setOutlineColor(debug_color);
+            shape_.setFillColor(debug_color_dark);
+            break;
+        }
+
+        return;
+    }
+
+    shape_.setOutlineColor(color);
+
     const sf::Color dark = {
         static_cast<sf::Uint8>(color.r / 2),
         static_cast<sf::Uint8>(color.g / 2),
         static_cast<sf::Uint8>(color.b / 2),
     };
 
-    shape_.setFillColor(dark);
-    shape_.setOutlineColor(color);
+    const sf::Color darker = {
+        static_cast<sf::Uint8>(color.r / 10),
+        static_cast<sf::Uint8>(color.g / 10),
+        static_cast<sf::Uint8>(color.b / 10),
+    };
+
+    switch (physical_object_.get_type())
+    {
+    case object_type::fixed:       shape_.setFillColor(darker); break;
+    case object_type::dynamic:     shape_.setFillColor(dark);;
+    case object_type::kinematic:   shape_.setFillColor(dark);;
+    default: ;
+    }
+}
+
+void polygon::set_color(const sf::Color& color)
+{
+    color_ = color;
+
+    update_color(color);
 }
 
 std::ostream& operator<<(std::ostream& os, const polygon& p)
