@@ -34,6 +34,7 @@ public:
 
     void scale(double dt);
     void update_color(const sf::Color& color);
+    void set_center(const Vector2d new_center);
 
     void add_contacts(const std::vector<contact_info>& contacts)
     {

@@ -60,7 +60,7 @@ void render(sf::RenderWindow& window, const std::vector<polygon>& polygons,
     if(custom_polygon.getVertexCount() != 0)
     {
         window.draw(custom_polygon);
-        
+
         for(auto i = 0; i < custom_polygon.getVertexCount(); ++i)
         {
             sf::CircleShape corner(4);
@@ -108,6 +108,7 @@ int main()
 {
     auto increase_polygon = false;
     auto create_custom_polygon = false;
+    polygon *selected = nullptr;
 
     auto polygon_vertex_count = 4;
     auto scroll_vertex_count = 0;
@@ -170,48 +171,80 @@ int main()
             {
                 xs = sf::Mouse::getPosition().x - window.getPosition().x - 10;
                 ys = sf::Mouse::getPosition().y - window.getPosition().y - 35;
+                if(selected != nullptr)
+                    selected->set_center(as_world_coordinates(Vector2d({xs,
+                                                                        ys})));
             } break;
 
             case sf::Event::MouseWheelScrolled:
             {
+
                 scroll_vertex_count++;
-                if(scroll_vertex_count >= 10)
+                if(scroll_vertex_count >= 5)
                 {
                     scroll_vertex_count = 0;
-                    polygon_vertex_count = ( (polygon_vertex_count - 2) %
-                                             (MAX_VERTICES - 3) ) + 3;
+                    if(event.mouseWheelScroll.delta > 0)
+                        polygon_vertex_count++;
+                    else
+                        polygon_vertex_count--;
+                    if(polygon_vertex_count < 3)
+                        polygon_vertex_count = MAX_VERTICES;
+                    if(polygon_vertex_count > MAX_VERTICES)
+                        polygon_vertex_count = 3;
                 }
             } break;
 
             case sf::Event::MouseButtonPressed:
             {
-                if(event.mouseButton.button == sf::Mouse::Left)
+                for(auto &polygon : polygons)
                 {
-                    custom_polygon.append(sf::Vertex(sf::Vector2f(xs,ys),
-                                                     sf::Color::Yellow));
-                    if(create_custom_polygon)
-                        custom_polygon.append(sf::Vertex(sf::Vector2f(xs,ys),
-                                                         sf::Color::Yellow));
-                    create_custom_polygon = true;
+                    if(polygon.get_physical_object().get_type() !=
+                            object_type::fixed)
+                        continue;
+                    //Check if touching a polygon
+                    const auto polypos = as_screen_coordinates(polygon.get_physical_object()
+                            .center_of_mass_global());
+                    const auto polypos2 = Vector2d(polypos.x,polypos.y);
 
-                } else if(event.mouseButton.button == sf::Mouse::Right)
-                {
-                    if(create_custom_polygon)
+                    const auto distance_to_center = (polypos2 - Vector2d({xs,
+                                                                          ys})
+                    ).norm();
+
+                    const auto radius =  polygon.get_physical_object()
+                            .get_scale() / 2;
+                    if (distance_to_center < radius)
                     {
-                        // cancel
-                        custom_polygon.clear();
-                        create_custom_polygon = false;
+                        selected = &polygon;
+                        break;
                     }
-                    else
-                    {
-                        polygons.emplace_back(polygon::create_random(
-                            Vector2d(xs, ys), polygon_vertex_count));
+                }
 
-                        auto& polygon = polygons.back();
+                if(selected == nullptr) {
+                    if (event.mouseButton.button == sf::Mouse::Left) {
 
-                        polygon.get_physical_object().rotate(M_PI / 2);
+                        custom_polygon.append(sf::Vertex(sf::Vector2f(xs, ys),
+                                                         sf::Color::Yellow));
+                        if (create_custom_polygon)
+                            custom_polygon.append(
+                                    sf::Vertex(sf::Vector2f(xs, ys),
+                                               sf::Color::Yellow));
+                        create_custom_polygon = true;
 
-                        increase_polygon = true;
+                    } else if (event.mouseButton.button == sf::Mouse::Right) {
+                        if (create_custom_polygon) {
+                            // cancel
+                            custom_polygon.clear();
+                            create_custom_polygon = false;
+                        } else {
+                            polygons.emplace_back(polygon::create_random(
+                                    Vector2d(xs, ys), polygon_vertex_count));
+
+                            auto &polygon = polygons.back();
+
+                            polygon.get_physical_object().rotate(M_PI / 2);
+
+                            increase_polygon = true;
+                        }
                     }
                 }
 
@@ -227,7 +260,7 @@ int main()
                         .get_physical_object()
                         .set_type(object_type::dynamic);
                 }
-
+                selected = nullptr;
             } break;
 
             case sf::Event::KeyPressed:
@@ -267,7 +300,7 @@ int main()
 
                         polygons.emplace_back(
                             polygon::create_custom(custom_polygon));
-                        
+
                         custom_polygon.clear();
 
                         polygons.back().get_physical_object
