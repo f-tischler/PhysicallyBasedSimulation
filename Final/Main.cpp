@@ -40,7 +40,6 @@ enum class game_loop
 
 void render(sf::RenderWindow& window, const std::vector<polygon>& polygons,
             const sf::VertexArray custom_polygon)
-void render(sf::RenderWindow& window, const std::vector<polygon>& polygons)
 {
     window.clear({10, 10, 20});
     

@@ -276,7 +276,7 @@ polygon polygon::create_random(const Vector2d center, const size_t vertex_count)
     return p;
 }
 
-Vector2 calc_centroid(const std::vector<Vector2> vertices)
+Vector2d calc_centroid(const std::vector<Vector2d> vertices)
 {
 
     auto x = 0.0f;
@@ -323,19 +323,19 @@ Vector2 calc_centroid(const std::vector<Vector2> vertices)
 polygon polygon::create_custom(sf::VertexArray custom_polygon)
 {
     unsigned actual_vertex_count = ((custom_polygon.getVertexCount()-1) / 2) + 1;
-    std::vector<Vector2> temp_points(actual_vertex_count);
-    temp_points[0] = Vector2({custom_polygon[0].position.x,
+    std::vector<Vector2d> temp_points(actual_vertex_count);
+    temp_points[0] = Vector2d({custom_polygon[0].position.x,
                                 custom_polygon[0].position.y});
     for (auto i = 1u, j = 1u; i < custom_polygon.getVertexCount(); i+=2)
     {
 
-        temp_points[j++] = Vector2({ custom_polygon[i].position.x,
+        temp_points[j++] = Vector2d({ custom_polygon[i].position.x,
                                     custom_polygon[i].position.y});
     }
 
     auto center = calc_centroid(temp_points);
 
-    std::vector<Vector2> points(actual_vertex_count);
+    std::vector<Vector2d> points(actual_vertex_count);
 
     for (auto i = 0u; i < actual_vertex_count; ++i)
     {
