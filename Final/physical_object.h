@@ -18,6 +18,21 @@ using point_t = std::tuple<Vector2d, Vector2d>;
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Vector2d)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(point_t)
 
+inline double cross2(const Vector2d a, const Vector2d b)
+{
+    return a.x() * b.y() - b.x() * a.y();
+}
+
+inline Vector2d cross2(const Vector2d v, const double s)
+{
+    return { s * v.y(), -s * v.x() };
+}
+
+inline Vector2d cross2(const double s, const Vector2d v)
+{
+    return { -s * v.y(), s * v.x() };
+}
+
 static const Vector2d gravity = { 0, -9.81 };
 
 enum class object_type
@@ -38,9 +53,12 @@ public:
 
     void accelerate(Vector2d point, Vector2d acceleration);
     void accelerate(Vector2d acceleration);
-    void add_force(Vector2d force);
-    void add_linear_velocity(const Vector2d v) { velocity_ += v; update_points(); }
-    void add_angular_velocity(const double v) { angular_velocity_ += v; update_points(); }
+
+    void apply_impulse(const Vector2d impulse, const Vector2d offset)
+    {
+        velocity_ += inverse_mass() * impulse;
+        angular_velocity_ += inverse_inertia_ * cross2(offset, impulse);
+    }
 
     Vector2d position() const { return position_; }
     Rotation2D rotation() const { return rotation_; }
@@ -116,19 +134,6 @@ private:
     void update_points();
 };
 
-inline double cross2(const Vector2d a, const Vector2d b)
-{
-    return a.x() * b.y() - b.x() * a.y();
-}
 
-inline Vector2d cross2(const Vector2d v, const double s)
-{
-    return { s * v.y(), -s * v.x() };
-}
-
-inline Vector2d cross2(const double s, const Vector2d v)
-{
-    return { -s * v.y(), s * v.x() };
-}
 
 #endif // PHYSICAL_OBJECT_H

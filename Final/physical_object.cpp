@@ -70,11 +70,6 @@ void physical_object::accelerate(const Vector2d acceleration)
     force_ += acceleration * mass_;
 }
 
-void physical_object::add_force(Vector2d force)
-{
-    force_ += force;
-}
-
 void physical_object::update_points()
 {
     auto inertia = 0.0;
@@ -82,10 +77,6 @@ void physical_object::update_points()
     {
         // transform offset
         const auto offset = rotation_.toRotationMatrix() * initial_offsets_[i] * scale_;
-
-        // calculate norm of angular velocity part (v = r * omega)
-        //const auto velocity_norm = offset.norm() * angular_velocity_;
-        //const auto normalized_offset = offset.normalized();
 
         points_[i] =
         {
