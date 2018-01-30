@@ -274,6 +274,13 @@ void collision_resolution(const std::vector<contact_info>& contacts)
         auto& a = contact.line_owner;
         auto& b = contact.point_owner;
 
+        const auto contact_points = std::count_if(contacts.begin(), contacts.end(),
+           [&b, &a](const contact_info& c)
+        {
+            return &c.point_owner == &b && &c.line_owner == &a ||
+                   &c.point_owner == &a && &c.line_owner == &b;
+        });
+
         const auto b_point_offset = std::get<0>(contact.point);
         const auto b_point_velocity = std::get<1>(contact.point);
 
@@ -302,7 +309,7 @@ void collision_resolution(const std::vector<contact_info>& contacts)
         const auto t_b = b.inverse_mass() + b.inverse_inertia() * rb_n * rb_n;
         const auto denom = t_a + t_b;
 
-        const auto j = -(1 + e) * relative_velocity / denom;
+        const auto j = -(1 + e) * relative_velocity / denom / contact_points;
         
         const auto normal_impulse = j * normal;
 
@@ -312,7 +319,7 @@ void collision_resolution(const std::vector<contact_info>& contacts)
         // friction
         const auto tangent = (rv - normal * rv.dot(normal)).normalized();
 
-        const auto jt = -rv.dot(tangent) / denom;
+        const auto jt = -rv.dot(tangent) / denom / contact_points;
 
         if (std::abs(jt) < 0.000001) continue;
         
@@ -349,7 +356,6 @@ void correct_positions(const std::vector<contact_info>& contacts)
         b.move( b.inverse_mass() * correction);
     }
 }
-
 
 void update(std::vector<polygon>& polygons, const double dt)
 {
@@ -443,10 +449,10 @@ int main()
 
             case sf::Event::MouseButtonPressed:
             {
-                polygons.emplace_back(polygon::create_random(
-                    Vector2(xs, ys), 4));
+                //polygons.emplace_back(polygon::create_random(
+                //    Vector2(xs, ys), 4));
 
-                //polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
+                polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
                 
                 auto& polygon = polygons.back();
 
