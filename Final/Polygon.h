@@ -5,7 +5,6 @@
 #ifndef PHYSICALLYBASEDSIMULATION_POLYGON_H
 #define PHYSICALLYBASEDSIMULATION_POLYGON_H
 
-#include "Vec2.h"
 #include "physical_object.h"
 
 #include <SFML/Graphics.hpp>
@@ -17,16 +16,16 @@ constexpr auto screen_scale = 20; // px = 1m
 class polygon
 {
 public:
-    polygon(const Vector2& center, std::vector<Vector2> points);
+    polygon(const Vector2d& center, std::vector<Vector2d> points);
 
-    static polygon create_rectangle(const Vector2 pos, const Vector2 scale);
-    static polygon create_line(const Vector2 start, const Vector2 end);
-    static polygon create_circle(const Vector2 center, const double radius);
-    static polygon create_random(const Vector2 center, const size_t vertex_count);
+    static polygon create_rectangle(const Vector2d pos, const Vector2d scale);
+    static polygon create_circle(const Vector2d center, const double radius);
+    static polygon create_random(const Vector2d center, const size_t vertex_count);
     static polygon create_custom(sf::VertexArray custom_polygon);
 
     void update(const double dt);
     void draw(sf::RenderWindow& window) const;
+    void draw_debug(sf::RenderWindow& window) const;
 
     const sf::Shape& get_shape() const { return shape_; }
 
@@ -34,6 +33,7 @@ public:
     const physical_object& get_physical_object() const { return physical_object_; }
 
     void scale(double dt);
+    void update_color(const sf::Color& color);
 
     void add_contacts(const std::vector<contact_info>& contacts)
     {
@@ -51,15 +51,6 @@ public:
         contacts_.clear();
     }
 
-    const Vector2& get_center_local() const
-    {
-        return
-        {
-            physical_object_.center_of_mass_local().x(),
-            physical_object_.center_of_mass_local().y()
-        };
-    }
-
     void enable_debug_info(const bool enable) { debug_output_ = enable; }
     void toggle_debug_info() { debug_output_ = !debug_output_; }
 
@@ -74,8 +65,10 @@ private:
 
     bool debug_output_ = false;
 
+    sf::Color color_;
+
     void update_shapes();
-    void draw_debug(sf::RenderWindow& window) const;
+
     void set_color(const sf::Color& color);
 };
 
@@ -88,14 +81,24 @@ inline sf::Vector2f as_screen_coordinates(Vector2d v)
     };
 }
 
-inline Vector2d as_world_coordinates(const Vector2& v)
-{
-    return { v.x() / screen_scale, -v.y() / screen_scale};
-}
-
 inline Vector2d as_world_coordinates(const sf::Vector2f& v)
 {
-    return { v.x / screen_scale, -v.y / screen_scale };
+    return { v.x / screen_scale, -v.y / screen_scale};
 }
+
+inline Vector2d as_world_coordinates(const Vector2d& v)
+{
+    return { v.x() / screen_scale, -v.y() / screen_scale };
+}
+
+inline sf::Vector2f to_sf(const Vector2d& v)
+{
+    return
+    {
+        static_cast<float>(v.x()),
+        static_cast<float>(v.y())
+    };
+}
+
 
 #endif //PHYSICALLYBASEDSIMULATION_POLYGON_H
