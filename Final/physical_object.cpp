@@ -47,7 +47,7 @@ void physical_object::update(const double dt)
     rotation_ = Rotation2D(rotation_.angle() + angular_velocity_ * dt);
 
     angular_momentum_ += torque_ * dt;
-    angular_velocity_ = inverse_inertia_ * angular_momentum_;
+    angular_velocity_ += inverse_inertia_ * angular_momentum_;
 
     update_points();
 
@@ -97,7 +97,7 @@ void physical_object::update_points()
         radius_ = std::max(radius_, offset.norm());
 
         // update inertia
-        inertia += initial_mass_ / points().size() * offset.squaredNorm();
+        inertia += mass_ / points().size() * offset.squaredNorm();
     }
 
     inverse_inertia_ = 1.0 / inertia;
