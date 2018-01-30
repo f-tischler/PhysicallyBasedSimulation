@@ -122,7 +122,6 @@ private:
     Vector2d force_;
 
     double torque_;
-    double angular_momentum_;
     double angular_velocity_;
     double inverse_inertia_;
 
