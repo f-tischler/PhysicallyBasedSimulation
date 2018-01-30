@@ -143,6 +143,8 @@ int main()
 
     polygons.emplace_back(polygon::create_circle(Vector2d(900, 300), 60));
 
+    const auto static_scene_size = polygons.size();
+
     using namespace std::chrono;
     using clock = high_resolution_clock;
 
@@ -234,6 +236,12 @@ int main()
                     sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
                 {
                     window.close();
+                }
+
+                if (sf::Keyboard::isKeyPressed(sf::Keyboard::R))
+                {
+                    while (polygons.size() > static_scene_size)
+                        polygons.pop_back();
                 }
 
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::G))
