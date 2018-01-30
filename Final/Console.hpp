@@ -7,18 +7,12 @@
 #include <sstream>
 #include <unordered_map>
 
-class Console
+class console
 {
-private:
-	Console()
-	{
-
-	}
-
 public:
-	static Console& instance()
+	static console& instance()
 	{
-		static Console console;
+		static console console;
 		return console;
 	}
 
@@ -52,6 +46,11 @@ public:
 	}
 
 private:
+    console()
+    {
+
+    }
+
 	void update()
 	{
 		std::stringstream stm;
@@ -69,4 +68,55 @@ private:
 	sf::Text m_text;
 	std::unordered_map<std::string, std::string> m_params;
 	sf::Font font;
+};
+
+template<class SmootherType, class FuncType>
+void measure(const std::string name, SmootherType& smoother, const FuncType& func)
+{
+    using namespace std::chrono;
+    using clock = high_resolution_clock;
+
+    const auto start_frame = clock::now();
+
+    func();
+
+    const auto elapsed = duration_cast<milliseconds>(clock::now() - start_frame);
+
+    smoother.add(static_cast<double>(elapsed.count()));
+
+    console::instance().set_param(name, smoother.get());
+};
+
+template<class FuncType, typename = 
+    std::enable_if_t<std::is_void_v<std::result_of_t<std::decay_t<FuncType>()>>>>
+void measure(const std::string name, const FuncType& func)
+{
+    using namespace std::chrono;
+    using clock = high_resolution_clock;
+
+    const auto start_frame = clock::now();
+
+    func();
+
+    const auto elapsed = duration_cast<milliseconds>(clock::now() - start_frame);
+
+    console::instance().set_param(name, elapsed.count());
+};
+
+template<class FuncType, typename = 
+    std::enable_if_t<!std::is_void_v<std::result_of_t<std::decay_t<FuncType>()>>>>
+auto measure(const std::string name, const FuncType& func)
+{
+    using namespace std::chrono;
+    using clock = high_resolution_clock;
+
+    const auto start_frame = clock::now();
+
+    auto result = func();
+
+    const auto elapsed = duration_cast<milliseconds>(clock::now() - start_frame);
+
+    console::instance().set_param(name, elapsed.count());
+
+    return result;
 };

@@ -12,7 +12,7 @@ std::default_random_engine rng;
 
 std::vector<std::tuple<Vector2d, double>> create_mass_points(
     const double density,
-    const std::vector<Vector2>& points)
+    const std::vector<Vector2d>& points)
 {
     constexpr auto depth = 1.0;
 
@@ -22,10 +22,11 @@ std::vector<std::tuple<Vector2d, double>> create_mass_points(
 
     for (auto i = 0u; i < points.size(); i++)
     {
-        auto point_i = points[i];
-        auto point_j = points[j];
+        const auto point_i = points[i];
+        const auto point_j = points[j];
 
         area += (point_j.x() + point_i.x()) * (point_j.y() - point_i.y());
+
         j = i; // j is previous vertex to i
     }
 
@@ -43,20 +44,14 @@ std::vector<std::tuple<Vector2d, double>> create_mass_points(
     return mass_points;
 }
 
-polygon::polygon(const Vector2& center, std::vector<Vector2> points)
+polygon::polygon(const Vector2d& center, std::vector<Vector2d> points)
     : physical_object_(as_world_coordinates(center), create_mass_points(0.05, points))
 {
     shape_.setPointCount(points.size());
 
-	auto accum = Vector2{ 0, 0 };
     for (auto i = 0u; i < points.size(); i++)
     {
-        auto point = points[i];
-		accum += point;
-
-        shape_.setPoint(i, sf::Vector2f(
-            static_cast<float>(point.x()),
-            static_cast<float>(point.y())));
+        shape_.setPoint(i, to_sf(points[i]));
     }
 
     const auto cof = as_screen_coordinates(physical_object_.center_of_mass_local());
@@ -172,19 +167,17 @@ std::ostream& operator<<(std::ostream& os, const polygon& p)
     return os;
 }
 
-polygon polygon::create_rectangle(const Vector2 pos, const Vector2 size)
+polygon polygon::create_rectangle(const Vector2d pos, const Vector2d size)
 {
     const auto aspect = size.x() / size.y();
     const auto half_height = 0.5;
     const auto half_width = half_height * aspect;
 
-    const std::vector<Vector2> points =
-    {
-        Vector2(-half_width, -half_height),
-        Vector2(-half_width,  half_height),
-        Vector2( half_width,  half_height),
-        Vector2( half_width, -half_height)
-    };
+    std::vector<Vector2d> points; 
+    points.emplace_back(-half_width, -half_height);
+    points.emplace_back(-half_width, half_height);
+    points.emplace_back(half_width, half_height);
+    points.emplace_back(half_width, -half_height);
 
     polygon p(pos, points);
 
@@ -194,30 +187,13 @@ polygon polygon::create_rectangle(const Vector2 pos, const Vector2 size)
     return p;
 }
 
-polygon polygon::create_line(const Vector2 start, const Vector2 end)
-{
-    const std::vector<Vector2> points =
-    {
-        Vector2(0,0),
-        Vector2(0.0001, 0.0001),
-        end,
-        Vector2(end.x() - 0.0001, end.y() - 0.0001)
-    };
-
-    polygon p((end - start) / 2, points);
-
-    p.set_color(sf::Color::White);
-
-    return p;
-}
-
-polygon polygon::create_circle(const Vector2 center, const double radius)
+polygon polygon::create_circle(const Vector2d center, const double radius)
 {
     constexpr auto vertex_count = 20;
 
     const auto angle = 360.0 / vertex_count;
 
-    std::vector<Vector2> points;
+    std::vector<Vector2d> points;
     for (auto i = 0; i < vertex_count; ++i) 
     {
         points.emplace_back(
@@ -233,14 +209,14 @@ polygon polygon::create_circle(const Vector2 center, const double radius)
     return p;
 }
 
-polygon polygon::create_random(const Vector2 center, const size_t vertex_count)
+polygon polygon::create_random(const Vector2d center, const size_t vertex_count)
 {
     const auto angle = 2 * M_PI / vertex_count;
 
     std::uniform_real_distribution<double> rnd(
         -angle / vertex_count, angle / vertex_count);
 
-    std::vector<Vector2> points;
+    std::vector<Vector2d> points;
     for (auto i = 0u; i < vertex_count; ++i)
     {
         const auto final_angle = i * angle + rnd(rng);
