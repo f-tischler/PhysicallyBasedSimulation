@@ -88,7 +88,8 @@ auto measure(const std::string name, const FuncType& func)
     return result;
 };
 
-void render(sf::RenderWindow& window, const std::vector<polygon>& polygons)
+void render(sf::RenderWindow& window, const std::vector<polygon>& polygons,
+            const sf::VertexArray custom_polygon)
 {
     window.clear();
     
@@ -98,6 +99,9 @@ void render(sf::RenderWindow& window, const std::vector<polygon>& polygons)
     }
 
 	Console::instance().print(window);
+
+    if(custom_polygon.getVertexCount()!=0)
+        window.draw(custom_polygon);
 
     window.display();
 }
@@ -112,11 +116,11 @@ bool lineSegmentIntersection(
 	double  distAB, theCos, theSin, newX, ABpos;
 
 	//  Fail if either line segment is zero-length.
-	if (Ax == Bx && Ay == By || Cx == Dx && Cy == Dy) return false;
+	if ( (Ax == Bx && Ay == By) || (Cx == Dx && Cy == Dy) ) return false;
 
 	//  Fail if the segments share an end-point.
-	if (Ax == Cx && Ay == Cy || Bx == Cx && By == Cy
-		|| Ax == Dx && Ay == Dy || Bx == Dx && By == Dy) {
+	if ( (Ax == Cx && Ay == Cy) || (Bx == Cx && By == Cy)
+		|| (Ax == Dx && Ay == Dy) || (Bx == Dx && By == Dy) ) {
 		return false;
 	}
 
@@ -137,7 +141,7 @@ bool lineSegmentIntersection(
 	Dy = Dy * theCos - Dx * theSin; Dx = newX;
 
 	//  Fail if segment C-D doesn't cross line A-B.
-	if (Cy<0. && Dy<0. || Cy >= 0. && Dy >= 0.) return false;
+	if ( (Cy<0. && Dy<0.) || (Cy >= 0. && Dy >= 0.) ) return false;
 
 	//  (3) Discover the position of the intersection point along line A-B.
 	ABpos = Dx + (Cx - Dx)*Dy / (Dy - Cy);
@@ -437,13 +441,18 @@ void update(std::vector<polygon>& polygons, const double dt)
 int main()
 {
     auto increase_polygon = false;
-    auto polygon_vertex_count = 3;
+    auto create_custom_polygon = false;
 
+    auto polygon_vertex_count = 4;
+    auto scroll_vertex_count = 0;
+
+    auto custom_polygon = sf::VertexArray(sf::Lines);
     std::vector<polygon> polygons;
 
     double xs = 0;
     double ys = 0;
 
+    constexpr auto MAX_VERTICES = 10;
     constexpr auto width = 1280;
     constexpr auto height = 800;
 
@@ -499,33 +508,40 @@ int main()
                 ys = sf::Mouse::getPosition().y - window.getPosition().y - 35;
             } break;
 
+            case sf::Event::MouseWheelScrolled:
+            {
+                scroll_vertex_count++;
+                if(scroll_vertex_count >= 10)
+                {
+                    scroll_vertex_count = 0;
+                    polygon_vertex_count = ( (polygon_vertex_count - 2) %
+                                             (MAX_VERTICES - 3) ) + 3;
+                }
+            } break;
+
             case sf::Event::MouseButtonPressed:
             {
-                polygons.emplace_back(polygon::create_random(
-                    Vector2(xs, ys), 4));
+                if(event.mouseButton.button == sf::Mouse::Left)
+                {
 
-                //polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
-                
-                auto& polygon = polygons.back();
+                    custom_polygon.append(sf::Vertex(sf::Vector2f(xs,ys),
+                                                     sf::Color::Yellow));
+                    if(create_custom_polygon)
+                        custom_polygon.append(sf::Vertex(sf::Vector2f(xs,ys),
+                                                         sf::Color::Yellow));
+                    create_custom_polygon = true;
 
-                polygon.get_physical_object().rotate(M_PI / 2);
+                } else if(event.mouseButton.button == sf::Mouse::Right)
+                {
+                    polygons.emplace_back(polygon::create_random(
+                            Vector2(xs, ys), polygon_vertex_count));
 
-                /*if(draw_circle)
-                    polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
-                else
-                    polygons.emplace_back(polygon::create_random(Vector2(xs, ys), 
-                        polygon_vertex_count));
+                    auto& polygon = polygons.back();
 
-     
-                const auto& shape = polygon.get_shape();
+                    polygon.get_physical_object().rotate(M_PI / 2);
 
-                std::uniform_int_distribution<unsigned> rnd(0, shape.getPointCount() - 1);
-                const auto random_point = polygon.get_shape().getPoint(rnd(rng));
-
-                polygons.back().get_physical_object().accelerate(
-                    as_world_coordinates(random_point), { 0, 15.0f });*/
-
-                increase_polygon = true;
+                    increase_polygon = true;
+                }
 
             } break;
 
@@ -536,8 +552,6 @@ int main()
                 polygons.at(polygons.size() - 1)
                     .get_physical_object()
                     .set_type(object_type::dynamic);
-
-                std::cout << polygons.size() << std::endl;
 
             } break;
 
@@ -562,21 +576,23 @@ int main()
                         polygon.toggle_debug_info();
                 }
 
-                /*
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::I))
+                if(sf::Keyboard::isKeyPressed(sf::Keyboard::Return))
                 {
-                polygon_vertex_count = ((polygon_vertex_count + 1) % 7) + 3;
-                }
+                    if(create_custom_polygon)
+                    {
+                        create_custom_polygon = false;
+                        polygons.emplace_back(polygon::create_custom
+                                                      (custom_polygon));
+                        custom_polygon.clear();
 
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-                {
-                polygon_vertex_count = ((polygon_vertex_count - 1) % 7) + 3;
-                }
+                        polygons.at(polygons.size() - 1).get_physical_object
+                                ().rotate(0);
 
-                if (sf::Keyboard::isKeyPressed(sf::Keyboard::C))
-                {
-                polygon_vertex_count = circle;
-                }*/
+                        polygons.at(polygons.size() - 1)
+                                .get_physical_object()
+                                .set_type(object_type::dynamic);
+                    }
+                }
 
             } break;
 
@@ -620,7 +636,7 @@ int main()
 
 		measure("Draw", draw_time_smooth, [&]
 		{
-			render(window, polygons);
+			render(window, polygons,custom_polygon);
 		});
 	};
 
@@ -642,9 +658,10 @@ int main()
 
 		measure("Draw", draw_time_smooth, [&]
 		{
-			render(window, polygons);
+			render(window, polygons,custom_polygon);
 		});
 	};
+
 
 	while (window.isOpen())
 	{
@@ -662,6 +679,9 @@ int main()
 		default:
 			break;
 		}
+
+        Console::instance().set_param("Vertex Count", polygon_vertex_count);
+
 	}
 
 

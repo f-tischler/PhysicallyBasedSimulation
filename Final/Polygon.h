@@ -23,6 +23,7 @@ public:
     static polygon create_line(const Vector2 start, const Vector2 end);
     static polygon create_circle(const Vector2 center, const double radius);
     static polygon create_random(const Vector2 center, const size_t vertex_count);
+    static polygon create_custom(sf::VertexArray custom_polygon);
 
     void update(const double dt);
     void draw(sf::RenderWindow& window) const;

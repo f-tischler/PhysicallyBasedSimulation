@@ -31,7 +31,7 @@ public:
 
 		m_text.setFont(font);
 		m_text.setCharacterSize(12);
-		m_text.setFillColor(sf::Color::White);
+		m_text.setColor(sf::Color::White);
 	}
 
 	template<typename T>
