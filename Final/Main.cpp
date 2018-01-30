@@ -29,6 +29,8 @@
 #include "collision_detection.h"
 #include "collision_resolution.h"
 
+const sf::Color clear_color({ 10, 10, 20 });
+
 enum class game_loop
 {
 	fixed = 0,
@@ -39,9 +41,9 @@ enum class game_loop
 /*----------------------------------------------------------------*/
 
 void render(sf::RenderWindow& window, const std::vector<polygon>& polygons,
-            const sf::VertexArray custom_polygon)
+            const sf::VertexArray& custom_polygon)
 {
-    window.clear({10, 10, 20});
+    window.clear(clear_color);
     
     for (auto& polygon : polygons)
     {
@@ -55,8 +57,23 @@ void render(sf::RenderWindow& window, const std::vector<polygon>& polygons,
 
 	console::instance().print(window);
 
-    if(custom_polygon.getVertexCount()!=0)
+    if(custom_polygon.getVertexCount() != 0)
+    {
         window.draw(custom_polygon);
+        
+        for(auto i = 0; i < custom_polygon.getVertexCount(); ++i)
+        {
+            sf::CircleShape corner(4);
+            corner.setOrigin(corner.getRadius(), corner.getRadius());
+            corner.setPosition(custom_polygon[i].position);
+            corner.setFillColor(sf::Color::Transparent);
+            corner.setOutlineColor(sf::Color::Yellow);
+            corner.setOutlineThickness(2);
+
+            window.draw(corner);
+        }
+    }
+
 
     window.display();
 }
@@ -168,7 +185,6 @@ int main()
             {
                 if(event.mouseButton.button == sf::Mouse::Left)
                 {
-
                     custom_polygon.append(sf::Vertex(sf::Vector2f(xs,ys),
                                                      sf::Color::Yellow));
                     if(create_custom_polygon)
@@ -178,25 +194,37 @@ int main()
 
                 } else if(event.mouseButton.button == sf::Mouse::Right)
                 {
-                    polygons.emplace_back(polygon::create_random(
+                    if(create_custom_polygon)
+                    {
+                        // cancel
+                        custom_polygon.clear();
+                        create_custom_polygon = false;
+                    }
+                    else
+                    {
+                        polygons.emplace_back(polygon::create_random(
                             Vector2d(xs, ys), polygon_vertex_count));
 
-                    auto& polygon = polygons.back();
+                        auto& polygon = polygons.back();
 
-                    polygon.get_physical_object().rotate(M_PI / 2);
+                        polygon.get_physical_object().rotate(M_PI / 2);
 
-                    increase_polygon = true;
+                        increase_polygon = true;
+                    }
                 }
 
             } break;
 
             case sf::Event::MouseButtonReleased:
             {
-                increase_polygon = false;
+                if(increase_polygon)
+                {
+                    increase_polygon = false;
 
-                polygons.at(polygons.size() - 1)
-                    .get_physical_object()
-                    .set_type(object_type::dynamic);
+                    polygons.at(polygons.size() - 1)
+                        .get_physical_object()
+                        .set_type(object_type::dynamic);
+                }
 
             } break;
 
@@ -228,16 +256,20 @@ int main()
                     if(create_custom_polygon)
                     {
                         create_custom_polygon = false;
-                        polygons.emplace_back(polygon::create_custom
-                                                      (custom_polygon));
+
+                        polygons.emplace_back(
+                            polygon::create_custom(custom_polygon));
+                        
                         custom_polygon.clear();
 
-                        polygons.at(polygons.size() - 1).get_physical_object
+                        polygons.back().get_physical_object
                                 ().rotate(0);
 
-                        polygons.at(polygons.size() - 1)
+                        polygons.back()
                                 .get_physical_object()
                                 .set_type(object_type::dynamic);
+
+                        polygons.back().enable_debug_info(debug);
                     }
                 }
 

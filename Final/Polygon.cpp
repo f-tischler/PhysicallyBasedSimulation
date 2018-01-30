@@ -322,18 +322,19 @@ Vector2d calc_centroid(const std::vector<Vector2d> vertices)
 
 polygon polygon::create_custom(sf::VertexArray custom_polygon)
 {
-    unsigned actual_vertex_count = ((custom_polygon.getVertexCount()-1) / 2) + 1;
+    const unsigned actual_vertex_count = ((custom_polygon.getVertexCount() - 1) / 2) + 1;
     std::vector<Vector2d> temp_points(actual_vertex_count);
-    temp_points[0] = Vector2d({custom_polygon[0].position.x,
-                                custom_polygon[0].position.y});
-    for (auto i = 1u, j = 1u; i < custom_polygon.getVertexCount(); i+=2)
+    temp_points[0] = Vector2d({ custom_polygon[0].position.x,
+                                custom_polygon[0].position.y });
+
+    for (auto i = 1u, j = 1u; i < custom_polygon.getVertexCount(); i += 2)
     {
 
         temp_points[j++] = Vector2d({ custom_polygon[i].position.x,
-                                    custom_polygon[i].position.y});
+                                    custom_polygon[i].position.y });
     }
 
-    auto center = calc_centroid(temp_points);
+    const auto center = calc_centroid(temp_points);
 
     std::vector<Vector2d> points(actual_vertex_count);
 
@@ -342,9 +343,26 @@ polygon polygon::create_custom(sf::VertexArray custom_polygon)
         points[i] = (temp_points[i] - center);
     }
 
+    auto max = points[0];
+    for (auto i = 0u; i < actual_vertex_count; ++i)
+    {
+        if (points[i].squaredNorm() < max.squaredNorm())
+            continue;
+
+        max = points[i];
+    }
+
+    const auto max_norm = max.norm() / 1.7;
+    for (auto i = 0u; i < actual_vertex_count; ++i)
+    {
+        points[i] /= max_norm;
+    }
+
+
     polygon p(center, points);
 
-    p.set_color(sf::Color::Green);
+    p.scale(max_norm);
+    p.set_color(sf::Color::Yellow);
 
     return p;
 }
