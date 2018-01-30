@@ -12,7 +12,7 @@
 #include <vector>
 #include "ContactInfo.hpp"
 
-constexpr auto screen_scale = 10; // px = 1m
+constexpr auto screen_scale = 20; // px = 1m
 
 class polygon 
 {

@@ -293,7 +293,7 @@ void collision_resolution(const std::vector<contact_info>& contacts)
 
         const auto e = rv.squaredNorm() < (gravity * 0.016).squaredNorm() + 0.01
             ? 0
-            : 0.5;
+            : 0.3;
 
         const auto ra_n = cross2(a_point_offset, normal);
         const auto rb_n = cross2(b_point_offset, normal);
@@ -382,8 +382,22 @@ int main()
 
     sf::RenderWindow window(sf::VideoMode(width, height), "2D Collision detection");
 
-	polygons.emplace_back(polygon::create_rectangle(Vector2(400, 600), Vector2(500, 80)));
-    polygons.emplace_back(polygon::create_rectangle(Vector2(400, 300), Vector2(500, 80)));
+	polygons.emplace_back(polygon::create_rectangle(Vector2(400, 700), Vector2(710, 40)));
+    polygons.back().get_physical_object().rotate(-5 * M_PI / 180);
+    
+    polygons.emplace_back(polygon::create_rectangle(Vector2(900, 650), Vector2(700, 40)));
+    polygons.back().get_physical_object().rotate(30 * M_PI / 180);
+
+    polygons.emplace_back(polygon::create_rectangle(Vector2(50, 400), Vector2(700, 40)));
+    polygons.back().get_physical_object().rotate(-70 * M_PI / 180);
+
+    polygons.emplace_back(polygon::create_random(Vector2(600, 400), 6));
+    polygons.back().scale(8);
+
+    polygons.emplace_back(polygon::create_random(Vector2(200, 420), 4));
+    polygons.back().scale(5);
+
+    polygons.emplace_back(polygon::create_circle(Vector2(900, 300), 60));
 
     using namespace std::chrono;
     using clock = high_resolution_clock;
@@ -391,7 +405,6 @@ int main()
 	const auto fps_60 = duration<double>(16ms);
 	const auto fps_30 = duration<double>(32ms);
     const auto interval = fps_60;
-
 
 	auto game_loop_type = GameLoopType::Fixed;
 
