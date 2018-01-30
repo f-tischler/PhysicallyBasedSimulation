@@ -101,39 +101,27 @@ void polygon::draw(sf::RenderWindow& window) const
         const auto center = physical_object_.center_of_mass_global();
 
         const auto point = center + std::get<0>(contact.point);
-        
-        sf::CircleShape circle(1);
+
+        sf::CircleShape circle(2);
         circle.setPosition(as_screen_coordinates(point));
-        circle.setFillColor(sf::Color{255, 0, 255});
+        circle.setOutlineColor(sf::Color{ 255, 0, 255 });
+        circle.setOutlineThickness(1);
         circle.setOrigin(circle.getRadius(), circle.getRadius());
         window.draw(circle);
 
-        circle.setPosition(as_screen_coordinates(contact.point_of_intersection));
-        circle.setFillColor(sf::Color{ 255, 255, 255 });
-        window.draw(circle);
-        
-        const auto direction = point - center;
-
-        sf::Vertex line[] =
-        {
-            sf::Vertex(as_screen_coordinates(center), sf::Color{255, 0, 255}),
-            sf::Vertex(as_screen_coordinates(center + direction), sf::Color{255, 0, 255})
-        };
-
-        window.draw(line, 2, sf::Lines);
+        //circle.setPosition(as_screen_coordinates(contact.point_of_intersection));
+        //circle.setFillColor(sf::Color{ 255, 255, 255 });
+        //window.draw(circle);
 
         const auto line_start = std::get<0>(std::get<0>(contact.line));
         const auto line_end = std::get<0>(std::get<1>(contact.line));
 
-        const auto normal = Vector2d(
-            -(line_end - line_start).y(),
-            (line_end - line_start).x()
-        ).normalized();
+        const auto n = normal(line_start, line_end);
 
         sf::Vertex normal_line[] =
         {
             sf::Vertex(as_screen_coordinates(point), sf::Color{ 255, 127, 0 }),
-            sf::Vertex(as_screen_coordinates(point + normal * 0.3), sf::Color{ 255, 127, 0 })
+            sf::Vertex(as_screen_coordinates(point + n), sf::Color{ 255, 127, 0 })
         };
 
         window.draw(normal_line, 2, sf::Lines);

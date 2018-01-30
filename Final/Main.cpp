@@ -269,8 +269,8 @@ void collision_resolution(const std::vector<contact_info>& contacts)
         const auto line_start = std::get<0>(std::get<0>(contact.line));
         const auto line_end = std::get<0>(std::get<1>(contact.line));
 
-        const auto normal = ((line_end + line_start) / 2.0).normalized();
-
+        const auto n = normal(line_start, line_end);
+        
         auto& a = contact.line_owner;
         auto& b = contact.point_owner;
 
@@ -293,7 +293,7 @@ void collision_resolution(const std::vector<contact_info>& contacts)
                 std::get<1>(std::get<1>(contact.line))) / 2.0;
 
         const Vector2d rv = b_point_velocity - a_point_velocity;
-        const auto relative_velocity = rv.dot(normal);
+        const auto relative_velocity = rv.dot(n);
 
         if (relative_velocity > 0)
             continue;
@@ -302,8 +302,8 @@ void collision_resolution(const std::vector<contact_info>& contacts)
             ? 0
             : 0.3;
 
-        const auto ra_n = cross2(a_point_offset, normal);
-        const auto rb_n = cross2(b_point_offset, normal);
+        const auto ra_n = cross2(a_point_offset, n);
+        const auto rb_n = cross2(b_point_offset, n);
 
         const auto t_a = a.inverse_mass() + a.inverse_inertia() * ra_n * ra_n;
         const auto t_b = b.inverse_mass() + b.inverse_inertia() * rb_n * rb_n;
@@ -311,13 +311,13 @@ void collision_resolution(const std::vector<contact_info>& contacts)
 
         const auto j = -(1 + e) * relative_velocity / denom / contact_points;
         
-        const auto normal_impulse = j * normal;
+        const auto normal_impulse = j * n;
 
         a.apply_impulse(-normal_impulse, a_point_offset);
         b.apply_impulse( normal_impulse, b_point_offset);
 
         // friction
-        const auto tangent = (rv - normal * rv.dot(normal)).normalized();
+        const auto tangent = (rv - n * rv.dot(n)).normalized();
 
         const auto jt = -rv.dot(tangent) / denom / contact_points;
 
@@ -449,10 +449,10 @@ int main()
 
             case sf::Event::MouseButtonPressed:
             {
-                //polygons.emplace_back(polygon::create_random(
-                //    Vector2(xs, ys), 4));
+                polygons.emplace_back(polygon::create_random(
+                    Vector2(xs, ys), 4));
 
-                polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
+                //polygons.emplace_back(polygon::create_circle(Vector2(xs, ys), 5));
                 
                 auto& polygon = polygons.back();
 

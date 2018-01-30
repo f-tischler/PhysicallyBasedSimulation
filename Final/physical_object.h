@@ -18,6 +18,21 @@ using point_t = std::tuple<Vector2d, Vector2d>;
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Vector2d)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(point_t)
 
+inline Vector2d normal(const Vector2d a, const Vector2d b)
+{
+    const auto dir = ((a + b) / 2.0).normalized();
+
+    const auto normal = Vector2d(
+        -(b - a).y(),
+        (b - a).x()
+    ).normalized();
+
+    return normal.dot(dir) < 0
+        ? Vector2d(-normal.x(), -normal.y())
+        : normal;
+}
+
+
 inline double cross2(const Vector2d a, const Vector2d b)
 {
     return a.x() * b.y() - b.x() * a.y();
