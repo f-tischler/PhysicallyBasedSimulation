@@ -162,38 +162,47 @@ inline bool intersects(physical_object& a, physical_object& b, std::vector<conta
 
 inline std::vector<contact_info> collision_detection(std::vector<polygon>& polygons)
 {
-    for (auto& polygon_a : polygons)
-    {
-        polygon_a.clear_contacts();
-    }
-
     std::vector<contact_info> global_contacts;
-    for (auto i = 0u; i < polygons.size(); ++i)
+
+    #pragma omp parallel shared(global_contacts)
     {
-        auto& polygon_a = polygons[i];
-
-        for (auto j = i + 1; j < polygons.size(); ++j)
+        #pragma omp for
+        for (auto i = 0; i < polygons.size(); ++i)
         {
-            auto& polygon_b = polygons[j];
+            polygons[i].clear_contacts();
+        }
 
-            auto& object_a = polygon_a.get_physical_object();
-            auto& object_b = polygon_b.get_physical_object();
+        #pragma omp for schedule(dynamic)
+        for (auto i = 0; i < polygons.size(); ++i)
+        {
+            auto& polygon_a = polygons[i];
 
-            if (object_a.get_type() == object_type::fixed &&
-                object_b.get_type() == object_type::fixed)
-                continue;
+            for (auto j = i + 1; j < polygons.size(); ++j)
+            {
+                auto& polygon_b = polygons[j];
 
-            std::vector<contact_info> local_contacts;
-            if (!intersects(object_a, object_b, local_contacts))
-                continue;
+                auto& object_a = polygon_a.get_physical_object();
+                auto& object_b = polygon_b.get_physical_object();
 
-            polygon_a.add_contacts(local_contacts);
-            polygon_b.add_contacts(local_contacts);
+                if (object_a.get_type() == object_type::fixed &&
+                    object_b.get_type() == object_type::fixed)
+                    continue;
 
-            std::move(
-                local_contacts.begin(),
-                local_contacts.end(),
-                std::back_inserter(global_contacts));
+                std::vector<contact_info> local_contacts;
+                if (!intersects(object_a, object_b, local_contacts))
+                    continue;
+
+                #pragma omp critical
+                {
+                    polygon_a.add_contacts(local_contacts);
+                    polygon_b.add_contacts(local_contacts);
+
+                    std::move(
+                        local_contacts.begin(),
+                        local_contacts.end(),
+                        std::back_inserter(global_contacts));
+                }
+            }
         }
     }
 

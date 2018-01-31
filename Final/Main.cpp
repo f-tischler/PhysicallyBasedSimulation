@@ -90,9 +90,10 @@ void update(std::vector<polygon>& polygons, const double dt)
 
     measure("Update: Integration", [&]
     {
-        for (auto& polygon : polygons)
+        #pragma omp parallel for
+        for (auto i = 0; i < polygons.size(); ++i)
         {
-            polygon.update(dt);
+            polygons[i].update(dt);
         }
     });
 
