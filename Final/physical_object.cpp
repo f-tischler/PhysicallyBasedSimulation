@@ -80,7 +80,6 @@ void physical_object::update_points()
         // transform offset
 		auto rot = rotation_.toRotationMatrix();
         const auto offset = rot * initial_offsets_[i] * scale_;
-		printf("%f/n", scale_);
 
         points_[i] =
         {
