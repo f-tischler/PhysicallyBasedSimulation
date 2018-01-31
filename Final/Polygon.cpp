@@ -236,7 +236,7 @@ polygon polygon::create_rectangle(const Vector2d& pos, const Vector2d& size)
 
 polygon polygon::create_circle(const Vector2d& center, const double radius)
 {
-    constexpr auto vertex_count = 50;
+    constexpr auto vertex_count = 20;
 
     const auto angle = 360.0 / vertex_count;
 
@@ -282,46 +282,54 @@ polygon polygon::create_random(const Vector2d& center, const size_t vertex_count
 
 Vector2d calc_centroid(const std::vector<Vector2d> vertices)
 {
-
-    auto x = 0.0f;
-    auto y = 0.0f;
-    auto signedArea = 0.0f;
-    auto x0 = 0.0f; // Current vertex X
-    auto y0 = 0.0f; // Current vertex Y
-    auto x1 = 0.0f; // Next vertex X
-    auto y1 = 0.0f; // Next vertex Y
-    auto a = 0.0f;  // Partial signed area
+    auto x = 0.0;
+    auto y = 0.0;
+    auto signed_area = 0.0;
+    auto x0 = 0.0; // Current vertex X
+    auto y0 = 0.0; // Current vertex Y
+    auto x1 = 0.0; // Next vertex X
+    auto y1 = 0.0; // Next vertex Y
+    auto a = 0.0;  // Partial signed area
 
     // For all vertices except last
-    int i=0;
-    for (i=0; i<vertices.size()-1; ++i)
+    auto i = 0u;
+    for (i=0; i < vertices.size() - 1; ++i)
     {
         x0 = vertices[i].x();
         y0 = vertices[i].y();
+
         x1 = vertices[i+1].x();
         y1 = vertices[i+1].y();
-        a = x0*y1 - x1*y0;
-        signedArea += a;
-        x += (x0 + x1)*a;
-        y += (y0 + y1)*a;
+
+        a = x0 * y1 - x1 * y0;
+
+        signed_area += a;
+
+        x += (x0 + x1) * a;
+        y += (y0 + y1) * a;
     }
 
     // Do last vertex separately to avoid performing an expensive
     // modulus operation in each iteration.
     x0 = vertices[i].x();
     y0 = vertices[i].y();
+
     x1 = vertices[0].x();
     y1 = vertices[0].y();
-    a = x0*y1 - x1*y0;
-    signedArea += a;
+
+    a = x0 * y1 - x1*y0;
+
+    signed_area += a;
+
     x += (x0 + x1)*a;
     y += (y0 + y1)*a;
 
-    signedArea *= 0.5;
-    x /= (6.0*signedArea);
-    y /= (6.0*signedArea);
+    signed_area *= 0.5;
 
-    return {x,y};
+    x /= 6.0 * signed_area;
+    y /= 6.0 * signed_area;
+
+    return { x, y };
 }
 
 polygon polygon::create_custom(sf::VertexArray custom_polygon)

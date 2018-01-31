@@ -59,7 +59,7 @@ void render(sf::RenderWindow& window, const std::vector<polygon>& polygons,
     {
         window.draw(custom_polygon);
 
-        for(auto i = 0; i < custom_polygon.getVertexCount(); ++i)
+        for(auto i = 0u; i < custom_polygon.getVertexCount(); ++i)
         {
             sf::CircleShape corner(4);
             corner.setOrigin(corner.getRadius(), corner.getRadius());
@@ -236,8 +236,15 @@ int main()
                 {
                     if (event.mouseButton.button == sf::Mouse::Left) 
                     {
-                        custom_polygon.append(sf::Vertex(sf::Vector2f(xs, ys), 
-                            sf::Color::Yellow));
+                        custom_polygon.append(
+                        {
+                            {
+                                static_cast<float>(xs),
+                                static_cast<float>(ys)
+                            },
+                                
+                            sf::Color::Yellow
+                        });
 
                         create_custom_polygon = true;
 
