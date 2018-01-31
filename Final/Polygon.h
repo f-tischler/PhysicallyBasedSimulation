@@ -18,9 +18,9 @@ class polygon
 public:
     polygon(const Vector2d& center, std::vector<Vector2d> points);
 
-    static polygon create_rectangle(const Vector2d pos, const Vector2d scale);
-    static polygon create_circle(const Vector2d center, const double radius);
-    static polygon create_random(const Vector2d center, const size_t vertex_count);
+    static polygon create_rectangle(const Vector2d& pos, const Vector2d& scale);
+    static polygon create_circle(const Vector2d& center, const double radius);
+    static polygon create_random(const Vector2d& center, const size_t vertex_count);
     static polygon create_custom(sf::VertexArray custom_polygon);
 
     void update(const double dt);
@@ -72,7 +72,7 @@ private:
     void set_color(const sf::Color& color);
 };
 
-inline sf::Vector2f as_screen_coordinates(Vector2d v)
+inline sf::Vector2f as_screen_coordinates(const Vector2d& v)
 {
     return 
     { 

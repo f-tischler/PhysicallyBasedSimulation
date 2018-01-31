@@ -22,13 +22,10 @@ inline void collision_resolution(const std::vector<contact_info>& contacts)
         const auto b_point_offset = std::get<0>(contact.point);
         const auto b_point_velocity = std::get<1>(contact.point);
 
-        const Vector2d a_point_offset =
-            (std::get<0>(std::get<0>(contact.line)) +
-                std::get<0>(std::get<1>(contact.line))) / 2.0;
-
-        const Vector2d a_point_velocity =
-            (std::get<1>(std::get<0>(contact.line)) +
-                std::get<1>(std::get<1>(contact.line))) / 2.0;
+		auto tmp = std::get<0>(contact.line);
+		auto tmp2 = std::get<1>(contact.line);
+        const Vector2d a_point_offset = (std::get<0>(tmp) + std::get<0>(tmp2)) / 2.0;
+        const Vector2d a_point_velocity = (std::get<1>(tmp) + std::get<1>(tmp2)) / 2.0;
 
         const Vector2d rv = b_point_velocity - a_point_velocity;
         const auto relative_velocity = rv.dot(n);

@@ -84,7 +84,7 @@ void update(std::vector<polygon>& polygons, const double dt)
     {
         return collision_detection(polygons);
     });
-	
+
     measure("Update: Collision Resolution", [&]
     {
 	    collision_resolution(contacts);
@@ -114,8 +114,6 @@ int main()
 
     auto custom_polygon = sf::VertexArray(sf::Lines);
 
-    double xs = 0;
-    double ys = 0;
 	console::instance().init();
 
     constexpr auto MAX_VERTICES = 10;
@@ -125,23 +123,40 @@ int main()
     sf::RenderWindow window(sf::VideoMode(width, height), "2D Collision detection");
 
     std::vector<polygon> polygons;
+	{
+		Vector2d position(400, 700);
+		Vector2d scale(710, 40);
 
-	polygons.emplace_back(polygon::create_rectangle(Vector2d(400, 700), Vector2d(710, 40)));
-    polygons.back().get_physical_object().rotate(-5 * M_PI / 180);
-    
-    polygons.emplace_back(polygon::create_rectangle(Vector2d(900, 650), Vector2d(700, 40)));
-    polygons.back().get_physical_object().rotate(30 * M_PI / 180);
+		polygons.emplace_back(polygon::create_rectangle(position, scale));
+		polygons.back().get_physical_object().rotate(-5 * M_PI / 180);
+		polygons.back().scale(1);
+	}
 
-    polygons.emplace_back(polygon::create_rectangle(Vector2d(50, 400), Vector2d(700, 40)));
-    polygons.back().get_physical_object().rotate(-70 * M_PI / 180);
+	{
+		Vector2d position(900, 650);
+		Vector2d scale(700, 40);
 
-    polygons.emplace_back(polygon::create_random(Vector2d(600, 400), 6));
-    polygons.back().scale(8);
+		polygons.emplace_back(polygon::create_rectangle(position, scale));
+		polygons.back().get_physical_object().rotate(30 * M_PI / 180);
+		polygons.back().scale(1);
+	}
 
-    polygons.emplace_back(polygon::create_random(Vector2d(200, 420), 4));
-    polygons.back().scale(5);
+	{
+		Vector2d position(600, 400);
+		polygons.emplace_back(polygon::create_random(position, 6));
+		polygons.back().scale(8);
+	}
 
-    polygons.emplace_back(polygon::create_circle(Vector2d(900, 300), 60));
+	{
+		Vector2d position(200, 420);
+		polygons.emplace_back(polygon::create_random(position, 6));
+		polygons.back().scale(8);
+	}
+
+	{
+		Vector2d position(900, 300);
+		polygons.emplace_back(polygon::create_circle(position, 60));
+	}
 
     const auto static_scene_size = polygons.size();
 

@@ -1,7 +1,7 @@
 #include "physical_object.h"
 #include <numeric>
 
-physical_object::physical_object(const Vector2d position,
+physical_object::physical_object(const Vector2d& position,
     const std::vector<std::tuple<Vector2d, double>>& points)
     : scale_(1), radius_(0), position_(position), rotation_(0), 
     velocity_(0, 0), force_(0, 0), torque_(0), angular_velocity_(0), points_(points.size())
@@ -16,8 +16,9 @@ physical_object::physical_object(const Vector2d position,
     mass_ = initial_mass_;
 
     // initial position of center of mass
-    center_of_mass_ = std::accumulate(points.begin(), points.end(), Vector2d(0, 0),
-        [](auto current_sum, auto p)
+	auto tmp = Vector2d(0, 0);
+    center_of_mass_ = std::accumulate(points.begin(), points.end(), tmp,
+        [](const auto& current_sum, auto p)
     {
         return current_sum + std::get<0>(p) * std::get<1>(p);
     }) / mass_;
@@ -56,7 +57,7 @@ void physical_object::update(const double dt)
     torque_ = 0.0;
 }
 
-void physical_object::accelerate(const Vector2d point, const Vector2d acceleration)
+void physical_object::accelerate(const Vector2d& point, const Vector2d& acceleration)
 {
     accelerate(acceleration);
 
@@ -66,7 +67,7 @@ void physical_object::accelerate(const Vector2d point, const Vector2d accelerati
     torque_ += cross2(offset, force);
 }
 
-void physical_object::accelerate(const Vector2d acceleration)
+void physical_object::accelerate(const Vector2d& acceleration)
 {
     force_ += acceleration * mass_;
 }
@@ -77,7 +78,9 @@ void physical_object::update_points()
     for (auto i = 0u; i < points_.size(); ++i)
     {
         // transform offset
-        const auto offset = rotation_.toRotationMatrix() * initial_offsets_[i] * scale_;
+		auto rot = rotation_.toRotationMatrix();
+        const auto offset = rot * initial_offsets_[i] * scale_;
+		printf("%f/n", scale_);
 
         points_[i] =
         {

@@ -18,7 +18,7 @@ using point_t = std::tuple<Vector2d, Vector2d>;
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Vector2d)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(point_t)
 
-inline Vector2d normal(const Vector2d a, const Vector2d b)
+inline Vector2d normal(const Vector2d& a, const Vector2d& b)
 {
     const auto dir = ((a + b) / 2.0).normalized();
 
@@ -33,17 +33,17 @@ inline Vector2d normal(const Vector2d a, const Vector2d b)
 }
 
 
-inline double cross2(const Vector2d a, const Vector2d b)
+inline double cross2(const Vector2d& a, const Vector2d& b)
 {
     return a.x() * b.y() - b.x() * a.y();
 }
 
-inline Vector2d cross2(const Vector2d v, const double s)
+inline Vector2d cross2(const Vector2d& v, const double s)
 {
     return { s * v.y(), -s * v.x() };
 }
 
-inline Vector2d cross2(const double s, const Vector2d v)
+inline Vector2d cross2(const double s, const Vector2d& v)
 {
     return { -s * v.y(), s * v.x() };
 }
@@ -61,25 +61,25 @@ class physical_object
 {
 public:
     explicit physical_object(
-        const Vector2d position,
+        const Vector2d& position,
         const std::vector<std::tuple<Vector2d, double>>& points);
 
     void update(const double dt);
 
-    void accelerate(Vector2d point, Vector2d acceleration);
-    void accelerate(Vector2d acceleration);
+    void accelerate(const Vector2d& point, const Vector2d& acceleration);
+    void accelerate(const Vector2d& acceleration);
 
-    void apply_impulse(const Vector2d impulse, const Vector2d offset)
+    void apply_impulse(const Vector2d& impulse, const Vector2d& offset)
     {
         velocity_ += inverse_mass() * impulse;
         angular_velocity_ += inverse_inertia_ * cross2(offset, impulse);
     }
 
-    Vector2d position() const { return position_; }
-    Rotation2D rotation() const { return rotation_; }
-    Vector2d linear_velocity() const { return velocity_; }
-    Vector2d center_of_mass_local() const { return center_of_mass_; }
-    Vector2d center_of_mass_global() const { return position_ + center_of_mass_; }
+	const Vector2d& position() const { return position_; }
+	const Rotation2D& rotation() const { return rotation_; }
+	const Vector2d& linear_velocity() const { return velocity_; }
+	const Vector2d& center_of_mass_local() const { return center_of_mass_; }
+	const Vector2d& center_of_mass_global() const { return position_ + center_of_mass_; }
     double inverse_inertia() const { return inverse_inertia_; }
     double bounding_radius() const { return radius_; }
     const std::vector<point_t>& points() const { return points_; }

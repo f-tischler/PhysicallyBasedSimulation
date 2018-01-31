@@ -56,10 +56,10 @@ inline bool lineSegmentIntersection(
     return true;
 }
 
-inline bool inside(const Vector2d point,
-    const Vector2d point_offset,
+inline bool inside(const Vector2d& point,
+    const Vector2d& point_offset,
     const std::vector<line_t>& lines,
-    const Vector2d line_offset)
+    const Vector2d& line_offset)
 {
     auto intersections = 0;
 

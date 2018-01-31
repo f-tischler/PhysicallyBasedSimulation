@@ -210,7 +210,7 @@ std::ostream& operator<<(std::ostream& os, const polygon& p)
     return os;
 }
 
-polygon polygon::create_rectangle(const Vector2d pos, const Vector2d size)
+polygon polygon::create_rectangle(const Vector2d& pos, const Vector2d& size)
 {
     const auto aspect = size.x() / size.y();
     const auto half_height = 0.5;
@@ -230,7 +230,7 @@ polygon polygon::create_rectangle(const Vector2d pos, const Vector2d size)
     return p;
 }
 
-polygon polygon::create_circle(const Vector2d center, const double radius)
+polygon polygon::create_circle(const Vector2d& center, const double radius)
 {
     constexpr auto vertex_count = 20;
 
@@ -252,7 +252,7 @@ polygon polygon::create_circle(const Vector2d center, const double radius)
     return p;
 }
 
-polygon polygon::create_random(const Vector2d center, const size_t vertex_count)
+polygon polygon::create_random(const Vector2d& center, const size_t vertex_count)
 {
     const auto angle = 2 * M_PI / vertex_count;
 
