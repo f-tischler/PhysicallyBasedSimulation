@@ -125,12 +125,6 @@ void polygon::draw_debug(sf::RenderWindow& window) const
 void polygon::draw(sf::RenderWindow& window) const
 {
     window.draw(shape_);
-    const auto center = as_screen_coordinates(get_physical_object()
-                                                      .center_of_mass_global());
-    sf::CircleShape circle(3);
-    circle.setFillColor(shape_.getOutlineColor());
-    circle.setPosition(center.x,center.y);
-    window.draw(circle);
 }
 
 void polygon::scale(const double factor)
