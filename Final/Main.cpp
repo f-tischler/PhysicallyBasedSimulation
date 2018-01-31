@@ -111,7 +111,7 @@ int main()
     auto polygon_vertex_count = 4;
     auto scroll_vertex_count = 0;
 
-    auto custom_polygon = sf::VertexArray(sf::Lines);
+    auto custom_polygon = sf::VertexArray(sf::LineStrip);
 
 	console::instance().init();
 
@@ -232,31 +232,36 @@ int main()
                     }
                 }
 
-                if(selected == nullptr) {
-                    if (event.mouseButton.button == sf::Mouse::Left) {
+                if(selected == nullptr)
+                {
+                    if (event.mouseButton.button == sf::Mouse::Left) 
+                    {
+                        custom_polygon.append(sf::Vertex(sf::Vector2f(xs, ys), 
+                            sf::Color::Yellow));
 
-                        custom_polygon.append(sf::Vertex(sf::Vector2f(xs, ys),
-                                                         sf::Color::Yellow));
-                        if (create_custom_polygon)
-                            custom_polygon.append(
-                                    sf::Vertex(sf::Vector2f(xs, ys),
-                                               sf::Color::Yellow));
                         create_custom_polygon = true;
 
-                    } else if (event.mouseButton.button == sf::Mouse::Right) {
-                        if (create_custom_polygon) {
+                    } 
+                    else if (event.mouseButton.button == sf::Mouse::Right) 
+                    {
+                        if (create_custom_polygon) 
+                        {
                             // cancel
                             custom_polygon.clear();
                             create_custom_polygon = false;
-                        } else {
+                        } 
+                        else 
+                        {
                             if(polygon_vertex_count == MAX_VERTICES)
+                            {
                                 polygons.emplace_back(polygon::create_circle
-                                                              (Vector2d(xs,
-                                                                        ys),
-                                                               10));
+                                (Vector2d(xs, ys),  10));
+                            }
                             else
+                            {
                                 polygons.emplace_back(polygon::create_random(
                                     Vector2d(xs, ys), polygon_vertex_count));
+                            }
 
                             auto &polygon = polygons.back();
 
@@ -280,7 +285,9 @@ int main()
                         .get_physical_object()
                         .set_type(object_type::dynamic);
                 }
+
                 selected = nullptr;
+
             } break;
 
             case sf::Event::KeyPressed:
@@ -314,7 +321,7 @@ int main()
 
                 if(sf::Keyboard::isKeyPressed(sf::Keyboard::Return))
                 {
-                    if(create_custom_polygon)
+                    if(create_custom_polygon && custom_polygon.getVertexCount() > 2)
                     {
                         create_custom_polygon = false;
 
@@ -333,9 +340,10 @@ int main()
                         polygons.back().enable_debug_info(debug);
                     }
                 }
+
                 if(sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
                 {
-                    if(create_custom_polygon)
+                    if(create_custom_polygon && custom_polygon.getVertexCount() > 2)
                     {
                         create_custom_polygon = false;
 
