@@ -16,8 +16,6 @@
 /* Standard includes */
 #include <thread>
 #include <random>
-#include <iostream>
-#include <iostream>
 #include <vector>
 #include <SFML/Graphics.hpp>
 
@@ -87,7 +85,7 @@ void update(std::vector<polygon>& polygons, const double dt)
 
     measure("Update: Collision Resolution", [&]
     {
-	    collision_resolution(contacts);
+	    collision_resolution(contacts, dt);
     });
 
     measure("Update: Integration", [&]

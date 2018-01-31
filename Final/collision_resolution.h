@@ -1,6 +1,6 @@
 #include "ContactInfo.hpp"
 
-inline void collision_resolution(const std::vector<contact_info>& contacts)
+inline void collision_resolution(const std::vector<contact_info>& contacts, const double dt)
 {
     for (const auto& contact : contacts)
     {
@@ -33,7 +33,7 @@ inline void collision_resolution(const std::vector<contact_info>& contacts)
         if (relative_velocity > 0)
             continue;
 
-        const auto e = rv.squaredNorm() < (gravity * 0.016).squaredNorm() + 0.01
+        const auto e = rv.squaredNorm() < (gravity * dt).squaredNorm() + 0.01
             ? 0
             : 0.3;
 
@@ -81,7 +81,7 @@ inline void correct_positions(const std::vector<contact_info>& contacts)
         auto& a = contact.line_owner;
         auto& b = contact.point_owner;
 
-        const auto percent = 0.2; // usually 20% to 80%
+        const auto percent = 0.6; // usually 20% to 80%
         const auto slop = 0.05; // usually 0.01 to 0.1
 
         const Vector2d correction = std::max(contact.penetration_depth - slop, 0.0)
