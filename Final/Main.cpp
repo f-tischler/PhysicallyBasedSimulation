@@ -249,7 +249,13 @@ int main()
                             custom_polygon.clear();
                             create_custom_polygon = false;
                         } else {
-                            polygons.emplace_back(polygon::create_random(
+                            if(polygon_vertex_count == MAX_VERTICES)
+                                polygons.emplace_back(polygon::create_circle
+                                                              (Vector2d(xs,
+                                                                        ys),
+                                                               10));
+                            else
+                                polygons.emplace_back(polygon::create_random(
                                     Vector2d(xs, ys), polygon_vertex_count));
 
                             auto &polygon = polygons.back();
@@ -431,8 +437,10 @@ int main()
 		default:
 			break;
 		}
-
-        console::instance().set_param("Vertex Count", polygon_vertex_count);
+        if(polygon_vertex_count == MAX_VERTICES)
+            console::instance().set_param("Vertex Count", "Circle");
+        else
+            console::instance().set_param("Vertex Count", polygon_vertex_count);
 
 	}
 

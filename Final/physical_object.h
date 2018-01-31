@@ -23,7 +23,7 @@ EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(point_t)
 
 inline Vector2d normal(const Vector2d& a, const Vector2d& b)
 {
-    const auto dir = ((a + b) / 2.0).normalized();
+    const auto dir = ((a + b) / 2.00).normalized();
 
     const auto normal = Vector2d(
         -(b - a).y(),

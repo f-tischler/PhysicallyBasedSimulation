@@ -125,6 +125,12 @@ void polygon::draw_debug(sf::RenderWindow& window) const
 void polygon::draw(sf::RenderWindow& window) const
 {
     window.draw(shape_);
+    const auto center = as_screen_coordinates(get_physical_object()
+                                                      .center_of_mass_global());
+    sf::CircleShape circle(3);
+    circle.setFillColor(shape_.getOutlineColor());
+    circle.setPosition(center.x,center.y);
+    window.draw(circle);
 }
 
 void polygon::scale(const double factor)
@@ -236,7 +242,7 @@ polygon polygon::create_rectangle(const Vector2d& pos, const Vector2d& size)
 
 polygon polygon::create_circle(const Vector2d& center, const double radius)
 {
-    constexpr auto vertex_count = 20;
+    constexpr auto vertex_count = 50;
 
     const auto angle = 360.0 / vertex_count;
 
