@@ -76,7 +76,7 @@ inline void correct_positions(const std::vector<contact_info>& contacts)
     {
         const auto line_start = std::get<0>(std::get<0>(contact.line));
         const auto line_end = std::get<0>(std::get<1>(contact.line));
-        const auto normal = ((line_end + line_start) / 2.0).normalized();
+        const auto n = normal(line_start, line_end);
 
         auto& a = contact.line_owner;
         auto& b = contact.point_owner;
@@ -85,7 +85,7 @@ inline void correct_positions(const std::vector<contact_info>& contacts)
         const auto slop = 0.05; // usually 0.01 to 0.1
 
         const Vector2d correction = std::max(contact.penetration_depth - slop, 0.0)
-            / (a.inverse_mass() + b.inverse_mass()) * percent * normal;
+            / (a.inverse_mass() + b.inverse_mass()) * percent * n;
 
         a.move(-a.inverse_mass() * correction);
         b.move(b.inverse_mass() * correction);
