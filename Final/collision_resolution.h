@@ -3,12 +3,89 @@
 
 #include "ContactInfo.hpp"
 
+inline void apply_friction(
+    physical_object& a, 
+    physical_object& b, 
+    const Vector2d& offset_a,
+    const Vector2d& offset_b,
+    const Vector2d& normal,
+    const Vector2d& rel_v,
+    const double rel_v_n,
+    const double j,
+    const int num_contacts)
+{
+    const auto tangent = (rel_v - normal * rel_v_n)
+        .normalized();
+
+    const auto ra_n = cross2(offset_a, tangent);
+    const auto rb_n = cross2(offset_b, tangent);
+
+    const auto t_a = a.inverse_mass() + a.inverse_inertia() * ra_n * ra_n;
+    const auto t_b = b.inverse_mass() + b.inverse_inertia() * rb_n * rb_n;
+    const auto denom = (t_a + t_b) * num_contacts;
+
+    assert(std::abs(denom) > 0);
+
+    const auto jt = -rel_v.dot(tangent) / denom;
+
+    if (std::abs(jt) < 0.000001) return;
+
+    const auto static_friction = 0.61;
+    const auto dynamic_friction = 0.47;
+
+    const auto tangent_impulse = std::abs(jt) < j * static_friction
+        ? (tangent * jt).eval()
+        : (tangent * -j * dynamic_friction).eval();
+
+    a.apply_impulse(-tangent_impulse, offset_a);
+    b.apply_impulse(tangent_impulse, offset_b);
+}
+
+inline double calc_impulse_norm(
+    const physical_object& a,
+    const physical_object& b,
+    const Vector2d& offset_a,
+    const Vector2d& offset_b,
+    const Vector2d& normal,
+    const double rel_v_n,
+    const double restitution,
+    const int num_contacts)
+{
+    const auto ra_n = cross2(offset_a, normal);
+    const auto rb_n = cross2(offset_b, normal);
+
+    const auto t_a = a.inverse_mass() + a.inverse_inertia() * ra_n * ra_n;
+    const auto t_b = b.inverse_mass() + b.inverse_inertia() * rb_n * rb_n;
+    const auto denom = (t_a + t_b) * num_contacts;
+
+    assert(std::abs(denom) > 0);
+
+    return -(1 + restitution) * rel_v_n / denom;
+}
+
+inline void apply_impulse(
+    physical_object& a, 
+    physical_object& b, 
+    const Vector2d& offset_a, 
+    const Vector2d& offset_b,
+    const Vector2d n, 
+    const double j)
+{
+    const auto normal_impulse = j * n;
+
+    a.apply_impulse(-normal_impulse, offset_a);
+    b.apply_impulse( normal_impulse, offset_b);
+}
+
 inline void collision_resolution(const std::vector<contact_info>& contacts, const double dt)
 {
     for (const auto& contact : contacts)
     {
-        const auto line_start = std::get<0>(std::get<0>(contact.line));
-        const auto line_end = std::get<0>(std::get<1>(contact.line));
+        const auto& line_start_point = std::get<0>(contact.line);
+        const auto& line_end_point = std::get<1>(contact.line);
+
+        const auto& line_start = std::get<0>(line_start_point);
+        const auto& line_end = std::get<0>(line_end_point);
 
         const auto n = normal(line_start, line_end);
 
@@ -24,58 +101,37 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
 
         assert(contact_points > 0);
 
-        const auto b_point_offset = std::get<0>(contact.point);
-        const auto b_point_velocity = std::get<1>(contact.point);
+        const auto offset_b = std::get<0>(contact.point);
+        const auto velocity_b = std::get<1>(contact.point);
 
-        auto tmp = std::get<0>(contact.line);
-        auto tmp2 = std::get<1>(contact.line);
-        const Vector2d a_point_offset = (std::get<0>(tmp) + std::get<0>(tmp2)) / 2.0;
-        const Vector2d a_point_velocity = (std::get<1>(tmp) + std::get<1>(tmp2)) / 2.0;
+        const Vector2d offset_a = (line_start + line_end) / 2.0;
+        const Vector2d velocity_a = 
+             (std::get<1>(line_start_point)
+            + std::get<1>(line_end_point)) / 2.0;
 
-        const Vector2d rv = b_point_velocity - a_point_velocity;
-        const auto relative_velocity = rv.dot(n);
+        const Vector2d rel_v = velocity_b - velocity_a;
+        const auto rel_v_n = rel_v.dot(n);
 
-        if (relative_velocity > 0)
+        if (rel_v_n > 0)
             continue;
 
-        const auto e = rv.squaredNorm() < (gravity * dt).squaredNorm() + 0.01
+        // if relative velocity 
+        const auto e = rel_v.squaredNorm() < (gravity * dt).squaredNorm() + 0.01
             ? 0
             : 0.3;
 
-        const auto ra_n = cross2(a_point_offset, n);
-        const auto rb_n = cross2(b_point_offset, n);
+        const auto j = calc_impulse_norm(a, b, 
+            offset_a, 
+            offset_b, 
+            n, 
+            rel_v_n, 
+            e,
+            contact_points);
 
-        const auto t_a = a.inverse_mass() + a.inverse_inertia() * ra_n * ra_n;
-        const auto t_b = b.inverse_mass() + b.inverse_inertia() * rb_n * rb_n;
-        const auto denom = (t_a + t_b) * contact_points;
+        assert(std::abs(j) < 100000);
 
-        assert(std::abs(denom) > 0);
-
-        const auto j = -(1 + e) * relative_velocity / denom;
-
-        assert(j != std::numeric_limits<decltype(j)>::infinity());
-
-        const auto normal_impulse = j * n;
-
-        a.apply_impulse(-normal_impulse, a_point_offset);
-        b.apply_impulse(normal_impulse, b_point_offset);
-
-        // friction
-        const auto tangent = (rv - n * rv.dot(n)).normalized();
-
-        const auto jt = -rv.dot(tangent) / denom;
-
-        if (std::abs(jt) < 0.000001) continue;
-
-        const auto static_friction = 0.61;
-        const auto dynamic_friction = 0.47;
-
-        const auto tangent_impulse = std::abs(jt) < j * static_friction
-            ? (tangent * jt).eval()
-            : (tangent * -j * dynamic_friction).eval();
-
-        a.apply_impulse(-tangent_impulse, a_point_offset);
-        b.apply_impulse(tangent_impulse, b_point_offset);
+        apply_impulse(a, b, offset_a, offset_b, n, j);
+        apply_friction(a, b, offset_a, offset_b, n, rel_v, rel_v_n, j, contact_points);
     }
 }
 
