@@ -96,3 +96,7 @@ void physical_object::update_points()
 
     inverse_inertia_ = 1.0 / inertia;
 }
+
+void physical_object::position(const Vector2d new_center) {
+    this->position_ = new_center;
+}

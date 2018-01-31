@@ -83,6 +83,7 @@ public:
     double inverse_inertia() const { return inverse_inertia_; }
     double bounding_radius() const { return radius_; }
     const std::vector<point_t>& points() const { return points_; }
+    void position(const Vector2d new_center);
 
     double mass() const 
     { 
@@ -122,6 +123,7 @@ public:
         rotation_ = Rotation2D(rotation_.angle() + a);
         update_points();
     }
+
 
 private:
     double initial_mass_;
