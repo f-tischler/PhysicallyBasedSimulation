@@ -194,7 +194,7 @@ void polygon::set_color(const sf::Color& color)
     update_color(color);
 }
 
-void polygon::set_center(const Vector2d new_center) {
+void polygon::set_center(const Vector2d& new_center) {
     this->physical_object_.position(new_center);
 }
 
