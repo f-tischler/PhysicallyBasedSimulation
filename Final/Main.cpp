@@ -256,6 +256,7 @@ int main()
 
                             auto &polygon = polygons.back();
 
+                            polygon.enable_debug_info(debug);
                             polygon.get_physical_object().rotate(M_PI / 2);
 
                             increase_polygon = true;

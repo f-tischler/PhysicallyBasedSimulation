@@ -32,7 +32,6 @@ inline Vector2d normal(const Vector2d& a, const Vector2d& b)
         : normal;
 }
 
-
 inline double cross2(const Vector2d& a, const Vector2d& b)
 {
     return a.x() * b.y() - b.x() * a.y();
@@ -79,7 +78,7 @@ public:
 	const Rotation2D& rotation() const { return rotation_; }
 	const Vector2d& linear_velocity() const { return velocity_; }
 	const Vector2d& center_of_mass_local() const { return center_of_mass_; }
-	const Vector2d& center_of_mass_global() const { return position_ + center_of_mass_; }
+	Vector2d center_of_mass_global() const { return position_ + center_of_mass_; }
     double inverse_inertia() const { return inverse_inertia_; }
     double bounding_radius() const { return radius_; }
     const std::vector<point_t>& points() const { return points_; }
