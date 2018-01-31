@@ -1,3 +1,6 @@
+#ifndef COLLISION_RESOLUTION_H
+#define COLLISION_RESOLUTION_H
+
 #include "ContactInfo.hpp"
 
 inline void collision_resolution(const std::vector<contact_info>& contacts, const double dt)
@@ -19,11 +22,13 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
                 &c.point_owner == &a && &c.line_owner == &b;
         });
 
+        assert(contact_points > 0);
+
         const auto b_point_offset = std::get<0>(contact.point);
         const auto b_point_velocity = std::get<1>(contact.point);
 
-		auto tmp = std::get<0>(contact.line);
-		auto tmp2 = std::get<1>(contact.line);
+        auto tmp = std::get<0>(contact.line);
+        auto tmp2 = std::get<1>(contact.line);
         const Vector2d a_point_offset = (std::get<0>(tmp) + std::get<0>(tmp2)) / 2.0;
         const Vector2d a_point_velocity = (std::get<1>(tmp) + std::get<1>(tmp2)) / 2.0;
 
@@ -42,9 +47,13 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
 
         const auto t_a = a.inverse_mass() + a.inverse_inertia() * ra_n * ra_n;
         const auto t_b = b.inverse_mass() + b.inverse_inertia() * rb_n * rb_n;
-        const auto denom = t_a + t_b;
+        const auto denom = (t_a + t_b) * contact_points;
 
-        const auto j = -(1 + e) * relative_velocity / denom / contact_points;
+        assert(std::abs(denom) > 0);
+
+        const auto j = -(1 + e) * relative_velocity / denom;
+
+        assert(j != std::numeric_limits<decltype(j)>::infinity());
 
         const auto normal_impulse = j * n;
 
@@ -54,7 +63,7 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
         // friction
         const auto tangent = (rv - n * rv.dot(n)).normalized();
 
-        const auto jt = -rv.dot(tangent) / denom / contact_points;
+        const auto jt = -rv.dot(tangent) / denom;
 
         if (std::abs(jt) < 0.000001) continue;
 
@@ -81,8 +90,8 @@ inline void correct_positions(const std::vector<contact_info>& contacts)
         auto& a = contact.line_owner;
         auto& b = contact.point_owner;
 
-        const auto percent = 0.6; // usually 20% to 80%
-        const auto slop = 0.05; // usually 0.01 to 0.1
+        const auto percent = 0.5; // usually 20% to 80%
+        const auto slop = 0.01; // usually 0.01 to 0.1
 
         const auto contact_points = std::count_if(contacts.begin(), contacts.end(),
             [&b, &a](const contact_info& c)
@@ -98,3 +107,4 @@ inline void correct_positions(const std::vector<contact_info>& contacts)
         b.move(b.inverse_mass() * correction / contact_points);
     }
 }
+#endif // COLLISION_RESOLUTION_H
