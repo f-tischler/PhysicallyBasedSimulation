@@ -1,6 +1,9 @@
 #ifndef PHYSICAL_OBJECT_H
 #define PHYSICAL_OBJECT_H
 
+#define EIGEN_DONT_ALIGN_STATICALLY
+#define EIGEN_DONT_VECTORIZE
+
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
@@ -107,6 +110,7 @@ public:
         // and bounding radius
         update_points();
     }
+
     double get_scale() const { return scale_; }
 
     void set_type(const object_type type) { type_ = type; }
