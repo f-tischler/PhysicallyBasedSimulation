@@ -54,7 +54,7 @@ void physical_object::update(const double dt)
     default: break;
     }
 
-    perform_leapfrog_step(dt);
+    perform_symplectic_euler_step(dt);
 
     update_points();
 
