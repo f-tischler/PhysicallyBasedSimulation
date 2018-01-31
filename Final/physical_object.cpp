@@ -33,6 +33,18 @@ physical_object::physical_object(const Vector2d& position,
     update_points();
 }
 
+void physical_object::perform_symplectic_euler_step(const double dt)
+{
+    const auto a = force_ / mass_;
+    const auto a_m = inverse_inertia_ * torque_;
+
+    velocity_ += a * dt;
+    angular_velocity_ += a_m * dt;
+
+    position_ += velocity_ * dt;
+    rotation_ = Rotation2D(rotation_.angle() + angular_velocity_ * dt);
+}
+
 void physical_object::update(const double dt)
 {
     switch (type_)
@@ -42,16 +54,14 @@ void physical_object::update(const double dt)
     default: break;
     }
 
-    // symplectic euler
-    // 1. velocity update
-    // 2. position update
-    velocity_ += force_ / mass_ * dt;
-    angular_velocity_ += inverse_inertia_ * torque_ * dt;
-
-    position_ += velocity_ * dt;
-    rotation_ = Rotation2D(rotation_.angle() + angular_velocity_ * dt);
+    perform_leapfrog_step(dt);
 
     update_points();
+
+    assert(velocity_.squaredNorm() < 100000000);
+    assert(std::abs(angular_velocity_) < 100000000);
+    assert(position_.squaredNorm() < 100000000);
+    assert(std::abs(rotation_.angle()) < 100000000);
 
     force_ = { 0.0, 0.0 };
     torque_ = 0.0;
@@ -96,6 +106,7 @@ void physical_object::update_points()
 
     inverse_inertia_ = 1.0 / inertia;
 }
+
 
 void physical_object::position(const Vector2d& new_center) {
     this->position_ = new_center;

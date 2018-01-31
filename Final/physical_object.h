@@ -151,6 +151,7 @@ private:
     object_type type_ = object_type::fixed;
 
     void update_points();
+    void perform_symplectic_euler_step(const double dt);
 };
 
 
