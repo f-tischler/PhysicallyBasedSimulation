@@ -84,10 +84,17 @@ inline void correct_positions(const std::vector<contact_info>& contacts)
         const auto percent = 0.6; // usually 20% to 80%
         const auto slop = 0.05; // usually 0.01 to 0.1
 
-        const Vector2d correction = std::max(contact.penetration_depth - slop, 0.0)
-            / (a.inverse_mass() + b.inverse_mass()) * percent * n;
+        const auto contact_points = std::count_if(contacts.begin(), contacts.end(),
+            [&b, &a](const contact_info& c)
+        {
+            return &c.point_owner == &b && &c.line_owner == &a ||
+                &c.point_owner == &a && &c.line_owner == &b;
+        });
 
-        a.move(-a.inverse_mass() * correction);
-        b.move(b.inverse_mass() * correction);
+        const Vector2d correction = std::max(contact.penetration_depth - slop, 0.0)
+            / (a.inverse_mass() + b.inverse_mass()) * percent * n ;
+
+        a.move(-a.inverse_mass() * correction / contact_points);
+        b.move(b.inverse_mass() * correction / contact_points);
     }
 }
