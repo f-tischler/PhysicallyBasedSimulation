@@ -91,7 +91,7 @@ inline void find_intersections(physical_object& object_a, physical_object& objec
 {
     const auto get_lines = [](const physical_object& object)
     {
-        std::vector<line_t> lines;
+        std::vector<line_t> lines = std::vector<line_t>();
 
         const auto& points = object.points();
 
