@@ -18,6 +18,9 @@ using Rotation2D = Eigen::Rotation2D<double>;
 // offset, velocity
 using point_t = std::tuple<Vector2d, Vector2d>;
 
+// point indices
+using line_t = std::tuple<size_t, size_t>;
+
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Vector2d)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(point_t)
 
@@ -85,6 +88,7 @@ public:
     double inverse_inertia() const { return inverse_inertia_; }
     double bounding_radius() const { return radius_; }
     const std::vector<point_t>& points() const { return points_; }
+    const std::vector<line_t>& lines() const { return lines_; }
     void position(const Vector2d& new_center);
 
     double mass() const 
@@ -114,6 +118,7 @@ public:
     double get_scale() const { return scale_; }
 
     void set_type(const object_type type) { type_ = type; }
+    
     object_type get_type() const { return type_; }
 
     void move(const Vector2d& v)
@@ -147,6 +152,7 @@ private:
 
     std::vector<Vector2d> initial_offsets_;
     std::vector<point_t> points_;
+    std::vector<line_t> lines_;
 
     object_type type_ = object_type::fixed;
 

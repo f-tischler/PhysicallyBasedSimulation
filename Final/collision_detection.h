@@ -56,29 +56,35 @@ inline bool lineSegmentIntersection(
     return true;
 }
 
-inline bool inside(const Vector2d& point,
-    const Vector2d& point_offset,
-    const std::vector<line_t>& lines,
-    const Vector2d& line_offset)
+inline bool inside(
+    const Vector2d& point,
+    const physical_object& object)
 {
     auto intersections = 0;
 
-    for (const auto& line_b : lines)
+    const Vector2d ray_dir = { 1, 0 };
+
+    const auto x2 = point.x() + ray_dir.x() * 100000.0;
+    const auto y2 = point.y() + ray_dir.y() * 100000.0;
+
+    for (const auto& line : object.lines())
     {
-        const auto x1 = point_offset.x() + point.x();
-        const auto y1 = point_offset.y() + point.y();
+        const auto line_start_index = std::get<0>(line);
+        const auto line_end_index = std::get<1>(line);
 
-        const auto x2 = point_offset.x() + point.x() * 100000.0;
-        const auto y2 = point_offset.y() + point.y() * 100000.0;
+        const auto line_start_point = object.points()[line_start_index];
+        const auto line_end_point = object.points()[line_end_index];
 
-        const auto x3 = line_offset.x() + std::get<0>(std::get<0>(line_b)).x();
-        const auto y3 = line_offset.y() + std::get<0>(std::get<0>(line_b)).y();
-
-        const auto x4 = line_offset.x() + std::get<0>(std::get<1>(line_b)).x();
-        const auto y4 = line_offset.y() + std::get<0>(std::get<1>(line_b)).y();
+        const auto line_start = object.position() + std::get<0>(line_start_point);
+        const auto line_end = object.position() + std::get<0>(line_end_point);
 
         double ix, iy;
-        if (!lineSegmentIntersection(x1, y1, x2, y2, x3, y3, x4, y4, ix, iy))
+        if (!lineSegmentIntersection(
+            point.x(), point.y(), 
+            x2, y2, 
+            line_start.x(), line_start.y(), 
+            line_end.x(), line_end.y(), 
+            ix, iy))
             continue;
 
         ++intersections;
@@ -89,76 +95,54 @@ inline bool inside(const Vector2d& point,
 
 inline void find_intersections(physical_object& object_a, physical_object& object_b, std::vector<contact_info>& contacts)
 {
-    const auto get_lines = [](const physical_object& object)
-    {
-        std::vector<line_t> lines = std::vector<line_t>();
-
-        const auto& points = object.points();
-
-        for (size_t i = 0; i < points.size(); i++)
-        {
-            auto end_index = i == points.size() - 1
-                ? 0
-                : i + 1;
-
-            lines.emplace_back(points[i], points[end_index]);
-        }
-
-        return lines;
-    };
-
-    const auto points_a = object_a.points();
-    const auto lines_b = get_lines(object_b);
-
     const auto position_a = object_a.position();
     const auto position_b = object_b.position();
 
-    for (const auto& point_a : points_a)
+    for (const auto& point_a : object_a.points())
     {
-        const auto point = std::get<0>(point_a);
+        const auto point_pos = position_a + std::get<0>(point_a);
 
-        if (!inside(point, position_a, lines_b, position_b))
+        if (!inside(point_pos, object_b))
             continue;
 
-        line_t line;
+        line_t nearest_line;
         auto distance = std::numeric_limits<double>::max();
         auto penetration_depth = 0.0;
         Vector2d point_of_intersection;
 
-        for (const auto& line_b : lines_b)
+        for (const auto& line : object_b.lines())
         {
-            const auto line_start = position_b + std::get<0>(std::get<0>(line_b));
-            const auto line_end = position_b + std::get<0>(std::get<1>(line_b));
+            const auto line_start_index = std::get<0>(line);
+            const auto line_end_index = std::get<1>(line);
 
-            const auto x1 = position_a.x();
-            const auto y1 = position_a.y();
+            const auto& line_start_point = object_b.points()[line_start_index];
+            const auto& line_end_point = object_b.points()[line_end_index];
 
-            const auto x2 = position_a.x() + point.x();
-            const auto y2 = position_a.y() + point.y();
-
-            const auto x3 = line_start.x();
-            const auto y3 = line_start.y();
-
-            const auto x4 = line_end.x();
-            const auto y4 = line_end.y();
+            const auto line_start = position_b + std::get<0>(line_start_point);
+            const auto line_end = position_b + std::get<0>(line_end_point);
 
             double ix, iy;
-            if (!lineSegmentIntersection(x1, y1, x2, y2, x3, y3, x4, y4, ix, iy))
+            if (!lineSegmentIntersection(
+                position_a.x(), position_a.y(), 
+                point_pos.x(), point_pos.y(), 
+                line_start.x(), line_start.y(), 
+                line_end.x(), line_end.y(), 
+                ix, iy))
                 continue;
 
             const auto current_distance =
-                (Vector2d(x2, y2) - Vector2d(ix, iy)).norm();
+                (Vector2d(point_pos.x(), point_pos.y()) - Vector2d(ix, iy)).norm();
 
             if (current_distance >= distance)
                 continue;
 
             distance = current_distance;
-            line = line_b;
+            nearest_line = line;
             penetration_depth = current_distance;
             point_of_intersection = Vector2d(ix, iy);
         }
 
-        contacts.emplace_back(object_a, point_a, object_b, line, penetration_depth, point_of_intersection);
+        contacts.emplace_back(object_a, point_a, object_b, nearest_line, penetration_depth, point_of_intersection);
     }
 }
 

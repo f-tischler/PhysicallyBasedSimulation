@@ -23,11 +23,15 @@ physical_object::physical_object(const Vector2d& position,
         return current_sum + std::get<0>(p) * std::get<1>(p);
     }) / mass_;
 
-    // get offsets
-    for(const auto& point : points)
+    
+    for(auto i = 0u; i < points.size(); ++i)
     {
+        // save offset
         initial_offsets_.push_back(
-            std::get<0>(point) - center_of_mass_);
+            std::get<0>(points[i]) - center_of_mass_);
+
+        // save line
+        lines_.emplace_back(i, (i + 1) % points_.size());
     }
 
     update_points();
@@ -58,9 +62,7 @@ void physical_object::update(const double dt)
 
     update_points();
 
-    assert(velocity_.squaredNorm() < 100000000);
     assert(std::abs(angular_velocity_) < 100000000);
-    assert(position_.squaredNorm() < 100000000);
     assert(std::abs(rotation_.angle()) < 100000000);
 
     force_ = { 0.0, 0.0 };
@@ -88,7 +90,7 @@ void physical_object::update_points()
     for (auto i = 0u; i < points_.size(); ++i)
     {
         // transform offset
-		auto rot = rotation_.toRotationMatrix();
+        const auto rot = rotation_.toRotationMatrix();
         const auto offset = rot * initial_offsets_[i] * scale_;
 
         points_[i] =

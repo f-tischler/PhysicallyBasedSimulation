@@ -81,35 +81,21 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
 {
     for (const auto& contact : contacts)
     {
-        const auto& line_start_point = std::get<0>(contact.line);
-        const auto& line_end_point = std::get<1>(contact.line);
+        auto& a = contact.line_owner();
+        auto& b = contact.point_owner();
 
-        const auto& line_start = std::get<0>(line_start_point);
-        const auto& line_end = std::get<0>(line_end_point);
-
-        const auto n = normal(line_start, line_end);
-
-        auto& a = contact.line_owner;
-        auto& b = contact.point_owner;
+        const auto n = contact.normal();
 
         const auto contact_points = std::count_if(contacts.begin(), contacts.end(),
             [&b, &a](const contact_info& c)
         {
-            return &c.point_owner == &b && &c.line_owner == &a ||
-                &c.point_owner == &a && &c.line_owner == &b;
+            return  &c.point_owner() == &b && &c.line_owner() == &a ||
+                    &c.point_owner() == &a && &c.line_owner() == &b;
         });
 
         assert(contact_points > 0);
 
-        const auto offset_b = std::get<0>(contact.point);
-        const auto velocity_b = std::get<1>(contact.point);
-
-        const Vector2d offset_a = (line_start + line_end) / 2.0;
-        const Vector2d velocity_a = 
-             (std::get<1>(line_start_point)
-            + std::get<1>(line_end_point)) / 2.0;
-
-        const Vector2d rel_v = velocity_b - velocity_a;
+        const auto rel_v = contact.relative_velocity();
         const auto rel_v_n = rel_v.dot(n);
 
         if (rel_v_n > 0)
@@ -121,8 +107,8 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
             : 0.3;
 
         const auto j = calc_impulse_norm(a, b, 
-            offset_a, 
-            offset_b, 
+            contact.line_offset(), 
+            contact.contact_point_offset(), 
             n, 
             rel_v_n, 
             e,
@@ -130,8 +116,16 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
 
         assert(std::abs(j) < 100000);
 
-        apply_impulse(a, b, offset_a, offset_b, n, j);
-        apply_friction(a, b, offset_a, offset_b, n, rel_v, rel_v_n, j, contact_points);
+        apply_impulse(a, b, 
+            contact.line_offset(), 
+            contact.contact_point_offset(), 
+            n, j);
+
+        apply_friction(a, b, 
+            contact.line_offset(), 
+            contact.contact_point_offset(), 
+            n, rel_v, rel_v_n, j, 
+            contact_points);
     }
 }
 
@@ -139,12 +133,10 @@ inline void correct_positions(const std::vector<contact_info>& contacts)
 {
     for (const auto& contact : contacts)
     {
-        const auto line_start = std::get<0>(std::get<0>(contact.line));
-        const auto line_end = std::get<0>(std::get<1>(contact.line));
-        const auto n = normal(line_start, line_end);
+        auto& a = contact.line_owner();
+        auto& b = contact.point_owner();
 
-        auto& a = contact.line_owner;
-        auto& b = contact.point_owner;
+        const auto n = contact.normal();
 
         const auto percent = 0.5; // usually 20% to 80%
         const auto slop = 0.01; // usually 0.01 to 0.1
@@ -152,11 +144,11 @@ inline void correct_positions(const std::vector<contact_info>& contacts)
         const auto contact_points = std::count_if(contacts.begin(), contacts.end(),
             [&b, &a](const contact_info& c)
         {
-            return &c.point_owner == &b && &c.line_owner == &a ||
-                &c.point_owner == &a && &c.line_owner == &b;
+            return  &c.point_owner() == &b && &c.line_owner() == &a ||
+                    &c.point_owner() == &a && &c.line_owner() == &b;
         });
 
-        const Vector2d correction = std::max(contact.penetration_depth - slop, 0.0)
+        const Vector2d correction = std::max(contact.penetration_depth() - slop, 0.0)
             / (a.inverse_mass() + b.inverse_mass()) * percent * n ;
 
         a.move(-a.inverse_mass() * correction / contact_points);

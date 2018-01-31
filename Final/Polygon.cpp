@@ -105,15 +105,12 @@ void polygon::draw_debug(sf::RenderWindow& window) const
     for (const auto& contact : contacts_)
     {
         const auto center = physical_object_.center_of_mass_global();
-        const auto point = center + std::get<0>(contact.point);
+        const auto point = center + contact.contact_point_offset();
 
         circle.setPosition(as_screen_coordinates(point));
         window.draw(circle);
 
-        const auto line_start = std::get<0>(std::get<0>(contact.line));
-        const auto line_end = std::get<0>(std::get<1>(contact.line));
-
-        const auto n = normal(line_start, line_end);
+        const auto n = contact.normal();
 
         normal_line[0] = sf::Vertex(as_screen_coordinates(point), sf::Color{ 255, 127, 0 });
         normal_line[1] = sf::Vertex(as_screen_coordinates(point + n), sf::Color{ 255, 127, 0 });

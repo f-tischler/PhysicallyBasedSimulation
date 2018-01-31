@@ -40,7 +40,7 @@ public:
     {
         for (auto& contact : contacts)
         {
-            if (&contact.point_owner != &physical_object_)
+            if (&contact.point_owner() != &physical_object_)
                 continue;
 
             contacts_.push_back(contact);
