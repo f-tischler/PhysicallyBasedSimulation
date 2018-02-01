@@ -99,7 +99,8 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
             continue;
 
         // if relative velocity 
-        const auto e = rel_v.squaredNorm() < (gravity * dt).squaredNorm() + 0.01
+        const auto restitution_slop_sq = 0.5 * 0.5;
+        const auto e = rel_v.squaredNorm() < restitution_slop_sq
             ? 0
             : 0.3;
 
