@@ -17,18 +17,19 @@ physical_object::physical_object(const Vector2d& position,
 
     // initial position of center of mass
 	auto tmp = Vector2d(0, 0);
-    center_of_mass_ = std::accumulate(points.begin(), points.end(), tmp,
+    initial_center_of_mass_ = std::accumulate(points.begin(), points.end(), tmp,
         [](const auto& current_sum, auto p)
     {
         return current_sum + std::get<0>(p) * std::get<1>(p);
     }) / mass_;
 
-    
+    center_of_mass_ = initial_center_of_mass_;
+
     for(auto i = 0u; i < points.size(); ++i)
     {
         // save offset
         initial_offsets_.push_back(
-            std::get<0>(points[i]) - center_of_mass_);
+            std::get<0>(points[i]) - initial_center_of_mass_);
 
         // save line
         lines_.emplace_back(i, (i + 1) % points_.size());
@@ -49,8 +50,6 @@ void physical_object::perform_symplectic_euler_step(const double dt)
 
     position_ += velocity_ * dt;
     rotation_ = Rotation2D(rotation_.angle() + angular_velocity_ * dt);
-
-    center_of_mass_global_ = position_ + center_of_mass_;
 }
 
 void physical_object::update(const double dt)
@@ -90,11 +89,12 @@ void physical_object::accelerate(const Vector2d& acceleration)
 
 void physical_object::update_points()
 {
+    const auto rot = rotation_.toRotationMatrix();
+
     auto inertia = 0.0;
     for (auto i = 0u; i < points_.size(); ++i)
     {
         // transform offset
-        const auto rot = rotation_.toRotationMatrix();
         const auto offset = rot * initial_offsets_[i] * scale_;
 
         points_[i] =
@@ -111,6 +111,9 @@ void physical_object::update_points()
     }
 
     inverse_inertia_ = 1.0 / inertia;
+
+    center_of_mass_ = rot * initial_center_of_mass_ * scale_;
+    center_of_mass_global_ = position_ + center_of_mass_;
 }
 
 
