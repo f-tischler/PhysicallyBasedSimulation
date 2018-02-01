@@ -226,7 +226,11 @@ polygon polygon::create_rectangle(const Vector2d& pos, const Vector2d& size)
     polygon p(pos, points);
 
     p.scale(size.x() / half_width / 2);
-    p.set_color(sf::Color::Blue);
+    p.set_color({
+        static_cast<sf::Uint8>(sf::Color::Cyan.r * 0.7),
+        static_cast<sf::Uint8>(sf::Color::Cyan.g * 0.7),
+        static_cast<sf::Uint8>(sf::Color::Cyan.b * 0.7),
+    });
 
     return p;
 }

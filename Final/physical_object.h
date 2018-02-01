@@ -84,7 +84,7 @@ public:
 	const Rotation2D& rotation() const { return rotation_; }
 	const Vector2d& linear_velocity() const { return velocity_; }
 	const Vector2d& center_of_mass_local() const { return center_of_mass_; }
-	Vector2d center_of_mass_global() const { return position_ + center_of_mass_; }
+	const Vector2d& center_of_mass_global() const { return center_of_mass_global_; }
     double inverse_inertia() const { return inverse_inertia_; }
     double bounding_radius() const { return radius_; }
     const std::vector<point_t>& points() const { return points_; }
@@ -140,6 +140,7 @@ private:
     double radius_;
 
     Vector2d center_of_mass_; 
+    Vector2d center_of_mass_global_;
     Vector2d position_;
     Rotation2D rotation_;
 

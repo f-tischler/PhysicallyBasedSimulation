@@ -34,6 +34,8 @@ physical_object::physical_object(const Vector2d& position,
         lines_.emplace_back(i, (i + 1) % points_.size());
     }
 
+    center_of_mass_global_ = position_ + center_of_mass_;
+
     update_points();
 }
 
@@ -47,6 +49,8 @@ void physical_object::perform_symplectic_euler_step(const double dt)
 
     position_ += velocity_ * dt;
     rotation_ = Rotation2D(rotation_.angle() + angular_velocity_ * dt);
+
+    center_of_mass_global_ = position_ + center_of_mass_;
 }
 
 void physical_object::update(const double dt)
