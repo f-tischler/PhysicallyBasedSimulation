@@ -130,12 +130,10 @@ inline void find_intersections(physical_object& object_a, physical_object& objec
                 ix, iy))
                 continue;
 
-            const auto n = ::normal(line_start, line_end);
-
             const auto current_distance =
-                (Vector2d(point_pos.x(), point_pos.y()) - Vector2d(ix, iy)).dot(n);
+                (Vector2d(point_pos.x(), point_pos.y()) - Vector2d(ix, iy)).norm();
 
-            if (std::abs(current_distance) >= distance)
+            if (current_distance >= distance)
                 continue;
 
             distance = current_distance;
