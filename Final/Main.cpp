@@ -120,7 +120,16 @@ int main()
     constexpr auto width = 1280;
     constexpr auto height = 800;
 
+    
     sf::RenderWindow window(sf::VideoMode(width, height), "2D Collision detection");
+    const auto mouse_correction_x = 10;
+    const auto mouse_correction_y = 35;
+    
+/*
+    sf::RenderWindow window(sf::VideoMode::getFullscreenModes().front(), "2D Collision detection", sf::Style::Fullscreen);
+    const auto mouse_correction_x = 0;
+    const auto mouse_correction_y = 0;
+*/
 
     std::vector<polygon> polygons;
 	{
@@ -183,8 +192,8 @@ int main()
 
             case sf::Event::MouseMoved:
             {
-                xs = sf::Mouse::getPosition().x - window.getPosition().x - 10;
-                ys = sf::Mouse::getPosition().y - window.getPosition().y - 35;
+                xs = sf::Mouse::getPosition().x - window.getPosition().x - mouse_correction_x;
+                ys = sf::Mouse::getPosition().y - window.getPosition().y - mouse_correction_y;
                 if(selected != nullptr)
                     selected->set_center(as_world_coordinates(Vector2d({xs,
                                                                         ys})));
