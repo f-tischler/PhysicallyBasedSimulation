@@ -109,7 +109,6 @@ public:
     {
         scale_ = scale; 
         mass_ = initial_mass_ * scale;
-        center_of_mass_ = initial_center_of_mass_ * scale;
 
         // updates offsets, inertia 
         // and bounding radius
@@ -140,8 +139,7 @@ private:
     double scale_;
     double radius_;
 
-    Vector2d initial_center_of_mass_; 
-    Vector2d center_of_mass_;
+    Vector2d center_of_mass_; 
     Vector2d center_of_mass_global_;
     Vector2d position_;
     Rotation2D rotation_;

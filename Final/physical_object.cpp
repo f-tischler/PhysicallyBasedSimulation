@@ -17,25 +17,21 @@ physical_object::physical_object(const Vector2d& position,
 
     // initial position of center of mass
 	auto tmp = Vector2d(0, 0);
-    initial_center_of_mass_ = std::accumulate(points.begin(), points.end(), tmp,
+    center_of_mass_ = std::accumulate(points.begin(), points.end(), tmp,
         [](const auto& current_sum, auto p)
     {
         return current_sum + std::get<0>(p) * std::get<1>(p);
     }) / mass_;
 
-    center_of_mass_ = initial_center_of_mass_;
-
     for(auto i = 0u; i < points.size(); ++i)
     {
         // save offset
         initial_offsets_.push_back(
-            std::get<0>(points[i]) - initial_center_of_mass_);
+            std::get<0>(points[i]) - center_of_mass_);
 
         // save line
         lines_.emplace_back(i, (i + 1) % points_.size());
     }
-
-    center_of_mass_global_ = position_ + center_of_mass_;
 
     update_points();
 }
@@ -112,11 +108,12 @@ void physical_object::update_points()
 
     inverse_inertia_ = 1.0 / inertia;
 
-    center_of_mass_ = rot * initial_center_of_mass_ * scale_;
     center_of_mass_global_ = position_ + center_of_mass_;
 }
 
 
-void physical_object::position(const Vector2d& new_center) {
-    this->position_ = new_center;
+void physical_object::position(const Vector2d& new_center) 
+{
+    position_ = new_center;
+    update_points();
 }
