@@ -38,6 +38,8 @@ physical_object::physical_object(const Vector2d& position,
 
 void physical_object::perform_symplectic_euler_step(const double dt)
 {
+    // integrate position/velocity
+
     const auto a = force_ / mass_;
     const auto a_m = inverse_inertia_ * torque_;
 
@@ -52,8 +54,8 @@ void physical_object::update(const double dt)
 {
     switch (type_)
     {
-    case object_type::fixed: return;
-    case object_type::dynamic: accelerate(gravity);
+    case object_type::fixed: return;                // do not update fixed objects
+    case object_type::dynamic: accelerate(gravity); // apply gravity to dynamic objects only
     default: break;
     }
 
@@ -61,25 +63,24 @@ void physical_object::update(const double dt)
 
     update_points();
 
-    assert(std::abs(angular_velocity_) < 100000000);
-    assert(std::abs(rotation_.angle()) < 100000000);
-
+    // reset 
     force_ = { 0.0, 0.0 };
     torque_ = 0.0;
 }
 
 void physical_object::accelerate(const Vector2d& point, const Vector2d& acceleration)
 {
-    accelerate(acceleration);
-
-    const auto offset = point - center_of_mass_;
+    // integrate force
     const auto force = acceleration * mass_;
 
+    // integrate torque
+    const auto offset = point - center_of_mass_;
     torque_ += cross2(offset, force);
 }
 
 void physical_object::accelerate(const Vector2d& acceleration)
 {
+    // integrate force
     force_ += acceleration * mass_;
 }
 
@@ -90,7 +91,8 @@ void physical_object::update_points()
     auto inertia = 0.0;
     for (auto i = 0u; i < points_.size(); ++i)
     {
-        // transform offset
+        // transform offset according to
+        // current rotation and scale
         const auto offset = rot * initial_offsets_[i] * scale_;
 
         points_[i] =

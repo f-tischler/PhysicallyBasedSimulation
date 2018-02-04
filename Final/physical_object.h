@@ -15,15 +15,17 @@ using Eigen::Vector2d;
 using Eigen::Matrix2d;
 using Rotation2D = Eigen::Rotation2D<double>;
 
-// offset, velocity
+// stores (offset, velocity)
 using point_t = std::tuple<Vector2d, Vector2d>;
 
-// point indices
+// stores point indices (start, end)
 using line_t = std::tuple<size_t, size_t>;
 
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Vector2d)
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(point_t)
 
+// ============================================================
+// utility functions
 inline Vector2d normal(const Vector2d& a, const Vector2d& b)
 {
     const auto dir = ((a + b) / 2.00).normalized();
@@ -53,15 +55,20 @@ inline Vector2d cross2(const double s, const Vector2d& v)
     return { -s * v.y(), s * v.x() };
 }
 
+// ============================================================
+
 static const Vector2d gravity = { 0, -9.81 };
 
 enum class object_type
 {
     fixed,
     dynamic,
-    kinematic
+    kinematic // not implemented
 };
 
+/**
+ * \brief Main class for handling object movement
+ */
 class physical_object
 {
 public:
@@ -105,6 +112,10 @@ public:
             : 1.0 / mass_;
     }
 
+    /**
+     * \brief Scale object by moving points and updating mass
+     * \param scale 
+     */
     void set_scale(const double scale)
     {
         scale_ = scale; 
@@ -134,7 +145,9 @@ public:
 
 
 private:
+    // save initial mass to allow scaling
     double initial_mass_;
+
     double mass_;
     double scale_;
     double radius_;

@@ -1,25 +1,8 @@
-/******************************************************************
-*
-* Main.cpp
-*
-* Description: This is an implementation of a collision detection
-* exmple.
-*
-* Physically-Based Simulation Proseminar WS 2016
-*
-* Interactive Graphics and Simulation Group
-* Institute of Computer Science
-* University of Innsbruck
-*
-*******************************************************************/
-
-/* Standard includes */
 #include <thread>
 #include <random>
 #include <vector>
 #include <SFML/Graphics.hpp>
 
-/* Local includes */
 #include "Polygon.h"
 #include "Console.hpp"
 #include "smoother.h"
@@ -35,8 +18,6 @@ enum class game_loop
 	variable,
 	unkown
 };
-
-/*----------------------------------------------------------------*/
 
 void render(sf::RenderWindow& window, const std::vector<polygon>& polygons,
             const sf::VertexArray& custom_polygon)
@@ -55,6 +36,9 @@ void render(sf::RenderWindow& window, const std::vector<polygon>& polygons,
 
 	console::instance().print(window);
 
+    // ---------------------------------------------------
+    // draw custom polygon being created
+
     if(custom_polygon.getVertexCount() != 0)
     {
         window.draw(custom_polygon);
@@ -72,22 +56,26 @@ void render(sf::RenderWindow& window, const std::vector<polygon>& polygons,
         }
     }
 
+    // ---------------------------------------------------
 
     window.display();
 }
 
 void update(std::vector<polygon>& polygons, const double dt)
 {
+    // detect collisions
     auto contacts = measure("Update: Collision Detection", [&]
     {
         return collision_detection(polygons);
     });
 
+    // apply impulses
     measure("Update: Collision Resolution", [&]
     {
 	    collision_resolution(contacts, dt);
     });
 
+    // integrate positions/velocities
     measure("Update: Integration", [&]
     {
         #pragma omp parallel for
@@ -97,6 +85,7 @@ void update(std::vector<polygon>& polygons, const double dt)
         }
     });
 
+    // apply position correction
     measure("Update: Position Correction", [&]
     {
         correct_positions(contacts);
@@ -111,76 +100,53 @@ int main()
 
     auto polygon_vertex_count = 4;
     auto scroll_vertex_count = 0;
+    constexpr auto max_vertices = 10;
 
     auto custom_polygon = sf::VertexArray(sf::LineStrip);
 
 	console::instance().init();
 
-    constexpr auto MAX_VERTICES = 10;
     constexpr auto width = 1280;
-    constexpr auto height = 800;
-
+    constexpr auto height = 800; 
     
-    sf::RenderWindow window(sf::VideoMode(width, height), "2D Collision detection");
     const auto mouse_correction_x = 10;
     const auto mouse_correction_y = 35;
-    
-/*
+
+    sf::RenderWindow window(sf::VideoMode(width, height), "2D Collision detection");
+
+/* 
     sf::RenderWindow window(sf::VideoMode::getFullscreenModes().front(), "2D Collision detection", sf::Style::Fullscreen);
     const auto mouse_correction_x = 0;
     const auto mouse_correction_y = 0;
 */
 
+    // ---------------------------------------------------------------------------
+    // prepare scene
     std::vector<polygon> polygons;
-	{
-		Vector2d position(400, 700);
-		Vector2d scale(710, 40);
 
-		polygons.emplace_back(polygon::create_rectangle(position, scale));
-		polygons.back().get_physical_object().rotate(-5 * M_PI / 180);
-		polygons.back().scale(1);
-	}
+	polygons.emplace_back(polygon::create_rectangle(Vector2d(400, 700), Vector2d(710, 40)));
+	polygons.back().get_physical_object().rotate(-5 * M_PI / 180);
+	polygons.back().scale(1);
 
-	{
-		Vector2d position(900, 650);
-		Vector2d scale(700, 40);
+	polygons.emplace_back(polygon::create_rectangle(Vector2d(900, 650), Vector2d(700, 40)));
+	polygons.back().get_physical_object().rotate(30 * M_PI / 180);
+	polygons.back().scale(1);
 
-		polygons.emplace_back(polygon::create_rectangle(position, scale));
-		polygons.back().get_physical_object().rotate(30 * M_PI / 180);
-		polygons.back().scale(1);
-	}
+	polygons.emplace_back(polygon::create_random(Vector2d(600, 400), 6));
+	polygons.back().scale(8);
 
-	{
-		Vector2d position(600, 400);
-		polygons.emplace_back(polygon::create_random(position, 6));
-		polygons.back().scale(8);
-	}
+	polygons.emplace_back(polygon::create_random(Vector2d(200, 420), 6));
+	polygons.back().scale(8);
 
-	{
-		Vector2d position(200, 420);
-		polygons.emplace_back(polygon::create_random(position, 6));
-		polygons.back().scale(8);
-	}
-
-	{
-		Vector2d position(900, 300);
-		polygons.emplace_back(polygon::create_circle(position, 60));
-	}
+	polygons.emplace_back(polygon::create_circle(Vector2d(900, 300), 60));
 
     const auto static_scene_size = polygons.size();
 
-    using namespace std::chrono;
-    using clock = high_resolution_clock;
+    // ---------------------------------------------------------------------------
 
-	auto game_loop_type = game_loop::variable;
+    auto game_loop_type = game_loop::variable;
 
-	smoother<double, 10> draw_time_smooth;
-	smoother<double, 10> update_time_smooth;
-
-    auto last_time = clock::now();
-
-    std::default_random_engine rng;
-
+    // function object used to process windows messages
     auto process_events = [&, xs = 0, ys = 0, debug = false] () mutable
     {
         sf::Event event;
@@ -211,8 +177,8 @@ int main()
                     else
                         polygon_vertex_count--;
                     if(polygon_vertex_count < 3)
-                        polygon_vertex_count = MAX_VERTICES;
-                    if(polygon_vertex_count > MAX_VERTICES)
+                        polygon_vertex_count = max_vertices;
+                    if(polygon_vertex_count > max_vertices)
                         polygon_vertex_count = 3;
                 }
             } break;
@@ -269,7 +235,7 @@ int main()
                         } 
                         else 
                         {
-                            if(polygon_vertex_count == MAX_VERTICES)
+                            if(polygon_vertex_count == max_vertices)
                             {
                                 polygons.emplace_back(polygon::create_circle
                                 (Vector2d(xs, ys),  10));
@@ -386,7 +352,16 @@ int main()
             }
         }
     };
+    
+    using namespace std::chrono;
+    using clock = high_resolution_clock;
 
+    smoother<double, 10> draw_time_smooth;
+    smoother<double, 10> update_time_smooth;
+
+    auto last_time = clock::now();
+
+    // fixed game loop function object
 	const auto fixed_game_loop = [&, interval = duration<double>(16ms)]()
 	{
 		auto elapsed_ms = duration_cast<milliseconds>(clock::now() - last_time);
@@ -424,6 +399,7 @@ int main()
 		});
 	};
 
+    // variable game loop function object
 	const auto variable_game_loop = [&]()
 	{
 		auto elapsed_s = duration_cast<duration<double>>(clock::now() - last_time);
@@ -445,7 +421,6 @@ int main()
 		});
 	};
 
-
 	while (window.isOpen())
 	{
 		switch (game_loop_type)
@@ -462,7 +437,7 @@ int main()
 		default:
 			break;
 		}
-        if(polygon_vertex_count == MAX_VERTICES)
+        if(polygon_vertex_count == max_vertices)
             console::instance().set_param("Vertex Count", "Circle");
         else
             console::instance().set_param("Vertex Count", polygon_vertex_count);

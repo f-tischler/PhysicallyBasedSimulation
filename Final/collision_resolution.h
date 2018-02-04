@@ -3,6 +3,18 @@
 
 #include "ContactInfo.hpp"
 
+/**
+ * \brief Calculates impulse norm J as shown in lecture
+ * \param a 
+ * \param b 
+ * \param offset_a 
+ * \param offset_b 
+ * \param normal 
+ * \param rel_v_n 
+ * \param restitution 
+ * \param num_contacts 
+ * \return Impulse norm
+ */
 inline double calc_impulse_norm(
     const physical_object& a,
     const physical_object& b,
@@ -25,6 +37,22 @@ inline double calc_impulse_norm(
     return -(1 + restitution) * rel_v_n / denom;
 }
 
+/**
+ * \brief Calculates the friction impulse using the tangential vector.
+ *        Friction impulse norm is calculated the same way as the 
+ *        normal impulse norm but using the tangent instead of the normal.
+ *        Distinguishes between static and dynamic friction
+ * \param a 
+ * \param b 
+ * \param offset_a 
+ * \param offset_b 
+ * \param normal 
+ * \param rel_v 
+ * \param rel_v_n 
+ * \param j 
+ * \param num_contacts 
+ * \return 
+ */
 inline Vector2d calc_friction_impulse(
     physical_object& a,
     physical_object& b,
@@ -60,6 +88,14 @@ inline Vector2d calc_friction_impulse(
         : (tangent * -j * dynamic_friction).eval();
 }
 
+/**
+ * \brief Applies the contact impulse to the objects
+ * \param a 
+ * \param b 
+ * \param offset_a 
+ * \param offset_b 
+ * \param impulse 
+ */
 inline void apply_impulse(
     physical_object& a, 
     physical_object& b, 
@@ -71,6 +107,14 @@ inline void apply_impulse(
     b.apply_impulse( impulse, offset_b);
 }
 
+/**
+ * \brief Applies normal and friction impulses to every object in the scene
+ *        Uses a fixed restitution (0.3) if relative velocity is above a certain threshold
+ *        (0 otherwise) to reduce jitter (restitution slop). 
+ *        Skips resolution if objects moving apart
+ * \param contacts 
+ * \param dt 
+ */
 inline void collision_resolution(const std::vector<contact_info>& contacts, const double dt)
 {
     #pragma omp parallel for
@@ -83,6 +127,7 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
 
         const auto n = contact.normal();
 
+        // find the number of contacts between these two objects
         const auto contact_points = std::count_if(contacts.begin(), contacts.end(),
             [&b, &a](const contact_info& c)
         {
@@ -92,18 +137,22 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
 
         assert(contact_points > 0);
 
+        // compute relative velocity 
         const auto rel_v = contact.relative_velocity();
         const auto rel_v_n = rel_v.dot(n);
 
+        // do not apply impulses to objects
+        // which a parting
         if (rel_v_n > 0)
             continue;
 
-        // if relative velocity 
+        // apply restitution slop
         const auto restitution_slop_sq = 0.5 * 0.5;
         const auto e = rel_v.squaredNorm() < restitution_slop_sq
             ? 0
             : 0.3;
 
+        // normal impulse
         const auto j = calc_impulse_norm(a, b,
             contact.line_offset(),
             contact.contact_point_offset(),
@@ -138,6 +187,12 @@ inline void collision_resolution(const std::vector<contact_info>& contacts, cons
     }
 }
 
+/**
+ * \brief Correct positions according to penetration depth
+ *        to avoid objects sinking into each other. Also
+ *        apply a slop here to avoid very small corrections
+ * \param contacts 
+ */
 inline void correct_positions(const std::vector<contact_info>& contacts)
 {
     #pragma omp parallel for
@@ -150,9 +205,10 @@ inline void correct_positions(const std::vector<contact_info>& contacts)
 
         const auto n = contact.normal();
 
-        const auto percent = 0.3; // usually 20% to 80%
-        const auto slop = 0.05; // usually 0.01 to 0.1
+        const auto percent = 0.3;   // usually 20% to 80%
+        const auto slop = 0.05;     // usually 0.01 to 0.1
 
+        // find the number of contacts between these two objects
         const auto contact_points = std::count_if(contacts.begin(), contacts.end(),
             [&b, &a](const contact_info& c)
         {

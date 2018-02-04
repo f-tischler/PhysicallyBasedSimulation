@@ -32,9 +32,11 @@ std::vector<std::tuple<Vector2d, double>> create_mass_points(
 
     area = abs(area / 2.0);
 
+    // uniformly distribute mass
     const auto total_mass = area * depth * density;
     const auto mass_per_point = total_mass / points.size();
 
+    // create mass points
     std::vector<std::tuple<Vector2d, double>> mass_points;
     for(const auto& p : points)
     {
@@ -47,6 +49,7 @@ std::vector<std::tuple<Vector2d, double>> create_mass_points(
 polygon::polygon(const Vector2d& center, std::vector<Vector2d> points)
     : physical_object_(as_world_coordinates(center), create_mass_points(0.05, points))
 {
+    // initialize shape
     shape_.setPointCount(points.size());
 
     for (auto i = 0u; i < points.size(); i++)

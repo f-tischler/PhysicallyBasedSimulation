@@ -5,6 +5,22 @@
 #include "ContactInfo.hpp"
 #include "Polygon.h"
 
+
+/**
+ * \brief   Returns if two line segments are intesecting
+ *          and stores the intersection point in X and Y
+ * \param Ax Segment A starting x
+ * \param Ay Segment A starting y
+ * \param Bx Segment A ending x
+ * \param By Segment A ending y
+ * \param Cx Segment B starting x
+ * \param Cy Segment B starting y
+ * \param Dx Segment B ending x
+ * \param Dy Segment B ending y
+ * \param X  [out] intersection x
+ * \param Y  [out] intersection y
+ * \return True if segment A and B intersect, false otherwise
+ */
 inline bool lineSegmentIntersection(
     double Ax, double Ay,
     double Bx, double By,
@@ -56,6 +72,15 @@ inline bool lineSegmentIntersection(
     return true;
 }
 
+
+/**
+ * \brief Determines if a point is inside of the given object 
+ *        by shooting a ray from the point into a fixed direction.
+ *        If the intersection count is odd, the point is inside
+ * \param point 
+ * \param object 
+ * \return True if inside, false otherwise
+ */
 inline bool inside(
     const Vector2d& point,
     const physical_object& object)
@@ -93,6 +118,15 @@ inline bool inside(
     return intersections % 2 == 1;
 }
 
+/**
+ * \brief Collects contacts between two objects 
+ *        Determines for each point in object_a if its
+ *        in object_b and then finds the closest intersecting
+ *        line and saves the contact
+ * \param object_a 
+ * \param object_b 
+ * \param [inout] contacts 
+ */
 inline void find_intersections(physical_object& object_a, physical_object& object_b, std::vector<contact_info>& contacts)
 {
     const auto position_a = object_a.position();
@@ -146,8 +180,19 @@ inline void find_intersections(physical_object& object_a, physical_object& objec
     }
 }
 
+
+/**
+ * \brief Collects ALL intersections between a and b. 
+ *        Does a bounding sphere test first to improve 
+ *        performance  
+ * \param a 
+ * \param b 
+ * \param [inout] contacts 
+ * \return True if a and b intersect, false otherwise
+ */
 inline bool intersects(physical_object& a, physical_object& b, std::vector<contact_info>& contacts)
 {
+    // check bounding sphere
     if ((a.center_of_mass_global() -
         b.center_of_mass_global()).norm() >
         a.bounding_radius() +
@@ -160,6 +205,11 @@ inline bool intersects(physical_object& a, physical_object& b, std::vector<conta
     return !contacts.empty();
 }
 
+/**
+ * \brief Returns a list of all contacts in the scene
+ * \param polygons 
+ * \return List of contacts
+ */
 inline std::vector<contact_info> collision_detection(std::vector<polygon>& polygons)
 {
     std::vector<contact_info> global_contacts;
@@ -184,6 +234,7 @@ inline std::vector<contact_info> collision_detection(std::vector<polygon>& polyg
                 auto& object_a = polygon_a.get_physical_object();
                 auto& object_b = polygon_b.get_physical_object();
 
+                // do not test fixed objects
                 if (object_a.get_type() == object_type::fixed &&
                     object_b.get_type() == object_type::fixed)
                     continue;
@@ -192,6 +243,7 @@ inline std::vector<contact_info> collision_detection(std::vector<polygon>& polyg
                 if (!intersects(object_a, object_b, local_contacts))
                     continue;
 
+                // add contacts to polygons for debug info
                 #pragma omp critical
                 {
                     polygon_a.add_contacts(local_contacts);

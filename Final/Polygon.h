@@ -1,7 +1,3 @@
-//
-// Created by ivan on 16/01/18.
-//
-
 #ifndef PHYSICALLYBASEDSIMULATION_POLYGON_H
 #define PHYSICALLYBASEDSIMULATION_POLYGON_H
 
@@ -13,6 +9,9 @@
 
 constexpr auto screen_scale = 20; // px = 1m
 
+/**
+ * \brief Visual representation of physical object
+ */
 class polygon
 {
 public:
@@ -73,6 +72,10 @@ private:
     void set_color(const sf::Color& color);
 };
 
+// ============================================================
+// utility functions to transform coordinates 
+// from/to screen space using a fixed scaling
+
 inline sf::Vector2f as_screen_coordinates(const Vector2d& v)
 {
     return 
@@ -92,6 +95,8 @@ inline Vector2d as_world_coordinates(const Vector2d& v)
     return { v.x() / screen_scale, -v.y() / screen_scale };
 }
 
+// ============================================================
+
 inline sf::Vector2f to_sf(const Vector2d& v)
 {
     return
@@ -100,6 +105,5 @@ inline sf::Vector2f to_sf(const Vector2d& v)
         static_cast<float>(v.y())
     };
 }
-
 
 #endif //PHYSICALLYBASEDSIMULATION_POLYGON_H
